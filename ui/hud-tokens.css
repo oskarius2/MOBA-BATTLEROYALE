@@ -150,6 +150,14 @@
 
 /* ─── Bottom action bar ─────────────────────────────────────── */
 
+#creep-info,
+#hud-top-right,
+#hud-action-bar,
+#level-up-flash {
+    position: relative;
+    z-index: 20;
+}
+
 #hud-action-bar {
     position: absolute;
     bottom: var(--hud-safe-bottom);
@@ -582,10 +590,10 @@
 /* ─── Damage numbers overlay ───────────────────────────────── */
 
 #damage-overlay {
-    position: absolute;
+    position: fixed;
     inset: 0;
     pointer-events: none;
-    z-index: 9;
+    z-index: 5;
 }
 
 @media (prefers-reduced-motion: reduce) {

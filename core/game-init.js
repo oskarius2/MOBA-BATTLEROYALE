@@ -8,7 +8,7 @@ import { HERO_ROSTER }             from '../data/hero-roster.js';
 import { SHOP_CATALOG }            from '../data/shop-catalog.js';
 import { JUNGLE_CAMP_LOCATIONS }   from '../data/world-config.js';
 import { Creep }                   from './entities/creep.js';
-import { resetBlight }             from './world/blight.js';
+import { Blight, resetBlight }     from './world/blight.js';
 import { camera, updateCamera }    from './camera.js';
 import { resetAbilityState }       from './ability-engine.js';
 import { playerLootState }         from './economy-engine.js';
@@ -23,10 +23,17 @@ import {
 } from './game-loop.js';
 import { CooldownState } from './ability-engine.js';
 import { XP_PER_LEVEL, CANVAS_WIDTH, CANVAS_HEIGHT } from '../data/world-config.js';
+import { SpriteSheetManager } from './rendering/sprite-sheet-manager.js';
+import { setSpriteRendering } from './rendering/render-config.js';
+import { spawnBots, resetBots } from './bot-manager.js';
+import { resetVision } from './vision-grid.js';
+import { clearDamageEvents } from './damage-events.js';
+import { resizeDamageOverlay } from '../ui/damage-numbers.js';
 
 let _player      = null;
 let _playerClass = 'Ranger';
 let _getViewport = () => ({ width: window.innerWidth, height: window.innerHeight });
+let _spritesLoaded = false;
 
 export function setGameInitRefs({ player, getViewport }) {
     _player      = player;
@@ -34,6 +41,38 @@ export function setGameInitRefs({ player, getViewport }) {
 }
 
 export function getPlayerClass() { return _playerClass; }
+
+export async function ensureSpritesLoaded() {
+    if (_spritesLoaded) return;
+
+    const sheetMgr = SpriteSheetManager.getInstance();
+    try {
+        const response = await fetch('assets/manifest.json');
+        if (!response.ok) {
+            console.warn('Sprite manifest not found, using fallback rendering');
+            _spritesLoaded = true;
+            return;
+        }
+        const manifest = await response.json();
+        await sheetMgr.loadAll(manifest);
+        const hasRealSprites = Object.values(sheetMgr.cache).some(
+            e => e.loaded && !e.placeholder && !e.failed
+        );
+        setSpriteRendering(hasRealSprites);
+        _spritesLoaded = true;
+    } catch (err) {
+        console.warn('Could not load sprites:', err.message, '— using fallback rendering');
+        _spritesLoaded = true;
+    }
+}
+
+export function initEntityVisuals() {
+    if (!_spritesLoaded || !_player) return;
+    _player.initializeSprites();
+    for (const creep of Creeps) {
+        creep.initializeSprites();
+    }
+}
 
 export function applyHeroConfig(heroKey) {
     const hero = HERO_ROSTER[heroKey];
@@ -60,6 +99,11 @@ export function applyHeroConfig(heroKey) {
     _player.valhallaRefCount = 0;
 
     setPlayerClass(hero.classKey);
+
+    // Initialize player sprites after config
+    if (_spritesLoaded) {
+        _player.initializeSprites();
+    }
 }
 
 export function setupCreeps() {
@@ -116,12 +160,25 @@ export function initializeGame() {
 
     resetBlight();
     resetArrays();
+    resetBots();
+    resetVision();
+    clearDamageEvents();
     resetInventory(markHudDirty);
 
     initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 300);
     setupCreeps();
+    spawnBots(5);
+    initEntityVisuals();
+    resizeDamageOverlay();
     markHudDirty();
-    updateHud(_player, gameState, CooldownState, Creeps.length, 4, XP_PER_LEVEL, true);
+    updateHud(
+        _player, gameState, CooldownState,
+        Creeps.filter(c => !c.isDead).length,
+        new Set(Creeps.map(c => c.campIndex)).size,
+        XP_PER_LEVEL,
+        true,
+        { blight: Blight }
+    );
     updateShopUI(SHOP_CATALOG, _playerClass, calculateItemCost);
     checkMapPresenceUI(inventorySlotsArray());
 

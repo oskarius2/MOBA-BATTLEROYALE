@@ -11,6 +11,8 @@ const MAP_MAX = 5968;
 // ABILITY_CONFIG importeras från balance-config.js (single source of truth).
 // Ersätter det gamla lokala blocket (rad 10-72 i originalfilen).
 import { ABILITY_CONFIG } from './balance-config.js';
+import { triggerWeaponSwing } from './rendering/weapon-arc-renderer.js';
+import { Bots } from './bot-manager.js';
 
 export { ABILITY_CONFIG };
 
@@ -116,41 +118,19 @@ function processBasicAttack(player, pointerWorld, projectilesArray, creepsArray)
     const ptr = normalizePointer(pointerWorld);
     const angle = Math.atan2(ptr.worldY - player.y, ptr.worldX - player.x);
 
-    player.attackTimer = (heroClass === 'Hybrid'
+    const attackCdSec = (heroClass === 'Hybrid'
         ? (player.stance === 'MELEE' ? cfg.ATTACK_SPEED_MELEE : cfg.ATTACK_SPEED_RANGED)
         : cfg.ATTACK_SPEED) / 1000;
+    player.attackTimer = attackCdSec;
+    triggerWeaponSwing(player, Math.min(attackCdSec, 0.35));
 
     if (heroClass === 'Warrior') {
         const halfSpread = (Math.PI / 4) / 2;
-        creepsArray.forEach(creep => {
-            if (!creep.isDead) {
-                const dist = Math.hypot(creep.x - player.x, creep.y - player.y);
-                if (dist < cfg.ATTACK_RANGE + (creep.radius || 15)) {
-                    const targetAngle = Math.atan2(creep.y - player.y, creep.x - player.x);
-                    let angleDiff = Math.abs(angle - targetAngle);
-                    if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
-
-                    if (angleDiff <= halfSpread) {
-                        creep.takeDamage(playerDamage(player) * cfg.BASE_DAMAGE_MULTIPLIER);
-                    }
-                }
-            }
-        });
+        const dmg = playerDamage(player) * cfg.BASE_DAMAGE_MULTIPLIER;
+        _forEachMeleeTarget(player, angle, cfg.ATTACK_RANGE, halfSpread, creepsArray, Bots, (t) => t.takeDamage(dmg));
     } else if (heroClass === 'Tank-Viking') {
-        let closestCreep = null;
-        let minDist = cfg.ATTACK_RANGE;
-        creepsArray.forEach(creep => {
-            if (!creep.isDead) {
-                const dist = Math.hypot(creep.x - player.x, creep.y - player.y) - (creep.radius || 15);
-                if (dist < minDist) {
-                    minDist = dist;
-                    closestCreep = creep;
-                }
-            }
-        });
-        if (closestCreep) {
-            closestCreep.takeDamage(playerDamage(player) * 0.8);
-        }
+        const closest = _findClosestTarget(player, cfg.ATTACK_RANGE, creepsArray, Bots);
+        if (closest) closest.takeDamage(playerDamage(player) * 0.8);
     } else if (heroClass === 'Mage') {
         pushBasicAttackProjectile(
             projectilesArray,
@@ -177,19 +157,8 @@ function processBasicAttack(player, pointerWorld, projectilesArray, creepsArray)
         const isMelee = player.stance === 'MELEE';
         if (isMelee) {
             const halfSpread = (Math.PI / 2) / 2;
-            creepsArray.forEach(creep => {
-                if (!creep.isDead) {
-                    const dist = Math.hypot(creep.x - player.x, creep.y - player.y);
-                    if (dist < cfg.ATTACK_RANGE_MELEE + (creep.radius || 15)) {
-                        const targetAngle = Math.atan2(creep.y - player.y, creep.x - player.x);
-                        let angleDiff = Math.abs(angle - targetAngle);
-                        if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
-                        if (angleDiff <= halfSpread) {
-                            creep.takeDamage(playerDamage(player) * 0.9);
-                        }
-                    }
-                }
-            });
+            const dmg = playerDamage(player) * 0.9;
+            _forEachMeleeTarget(player, angle, cfg.ATTACK_RANGE_MELEE, halfSpread, creepsArray, Bots, (t) => t.takeDamage(dmg));
         } else {
             pushBasicAttackProjectile(
                 projectilesArray,
@@ -205,6 +174,40 @@ function processBasicAttack(player, pointerWorld, projectilesArray, creepsArray)
     }
 
     return true;
+}
+
+function _isTargetAlive(t) {
+    return t && !t.isDead && (t.isAlive !== false) && (t.hp === undefined || t.hp > 0);
+}
+
+function _forEachMeleeTarget(player, angle, range, halfSpread, creeps, bots, onHit) {
+    const tryHit = (target) => {
+        if (!_isTargetAlive(target)) return;
+        const dist = Math.hypot(target.x - player.x, target.y - player.y);
+        if (dist >= range + (target.radius || 15)) return;
+        const targetAngle = Math.atan2(target.y - player.y, target.x - player.x);
+        let angleDiff = Math.abs(angle - targetAngle);
+        if (angleDiff > Math.PI) angleDiff = Math.PI * 2 - angleDiff;
+        if (angleDiff <= halfSpread) onHit(target);
+    };
+    creeps.forEach(tryHit);
+    bots.forEach(tryHit);
+}
+
+function _findClosestTarget(player, range, creeps, bots) {
+    let closest = null;
+    let minDist = range;
+    const tryClosest = (target) => {
+        if (!_isTargetAlive(target)) return;
+        const dist = Math.hypot(target.x - player.x, target.y - player.y) - (target.radius || 15);
+        if (dist < minDist) {
+            minDist = dist;
+            closest = target;
+        }
+    };
+    creeps.forEach(tryClosest);
+    bots.forEach(tryClosest);
+    return closest;
 }
 
 function clampMapCoord(value) {

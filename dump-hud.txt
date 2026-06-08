@@ -104,12 +104,9 @@ export function updateHud(player, gameState, cooldowns, aliveCreeps, activeCamps
     _set('creeps-count', activeCamps);
     _set('alive-counter', aliveCreeps);
 
-    const portraitLetter = document.getElementById('hud-portrait-letter');
     const portraitEl = document.getElementById('hud-portrait');
-    if (portraitLetter) {
-        portraitLetter.textContent = PORTRAIT_LETTERS[player.heroClass] ?? '?';
-    }
     if (portraitEl) {
+        portraitEl.textContent = PORTRAIT_LETTERS[player.heroClass] ?? '?';
         portraitEl.setAttribute('aria-label', player.heroTitle || player.heroClass);
     }
     _set('hud-hero-name', player.heroTitle || player.heroRole || player.heroClass);
@@ -164,11 +161,6 @@ function updateAbilitySlot(slotId, remaining, maxCd, name, key, isUlt = false, i
 
     const nameEl = el.querySelector('.ability-name');
     if (nameEl) nameEl.textContent = name;
-
-    const iconEl = el.querySelector('.ability-icon');
-    if (iconEl) {
-        iconEl.textContent = isBasic ? '⚔' : (name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || name[0]);
-    }
 
     const keyEl = el.querySelector('.ability-key');
     if (keyEl) keyEl.textContent = key;

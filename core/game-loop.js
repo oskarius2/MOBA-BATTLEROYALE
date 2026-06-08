@@ -36,7 +36,7 @@ import { tickWeaponArcAnimation }  from './rendering/weapon-arc-renderer.js';
 import { DroppedItem }             from './entities/item.js';
 import { rollDrop, playerLootState }           from './economy-engine.js';
 import { calculateFarmGold, calculateBounty }  from './economy-engine.js';
-import { collectItem }             from './inventory.js';
+import { collectItem, inventorySlotsArray } from './inventory.js';
 import { updateHud, showLevelUpFlash, markHudDirty } from '../ui/hud.js';
 import { updateMinimap }           from '../ui/minimap.js';
 import { renderDamageNumbers, resizeDamageOverlay } from '../ui/damage-numbers.js';
@@ -124,7 +124,7 @@ export function updateGameLogic(deltaTime) {
     }
 
     _player.speedModifier = getTerrainType(_player.x, _player.y) === 'WATER' ? 0.7 : 1.0;
-    _player.update(keysRef());
+    _player.update(keysRef(), deltaTime);
 
     updateCamera(_player, _viewportWidth, _viewportHeight);
     updateBlight(deltaTime);
@@ -155,7 +155,7 @@ export function updateGameLogic(deltaTime) {
     // Creep-uppdatering + projektilkollision
     for (let i = Creeps.length - 1; i >= 0; i--) {
         const creep = Creeps[i];
-        creep.update(_player, deltaTime / 1000);
+        creep.update(_player, deltaTime);
 
         for (let j = Projectiles.length - 1; j >= 0; j--) {
             const proj = Projectiles[j];
@@ -217,7 +217,7 @@ export function updateGameLogic(deltaTime) {
 
     // Blight-skada
     if (isOutsideBlight(_player.x, _player.y)) {
-        _player.takeDamage(Blight.damagePerTick * deltaTime / 100);
+        _player.takeDamage(Blight.damagePerTick * deltaTime / 100, 'blight');
     }
 
     // Creep-kontaktskada (defensiv guard mot NaN/undefined-coords)
@@ -234,10 +234,11 @@ export function updateGameLogic(deltaTime) {
         _player, gameState, CooldownState,
         Creeps.filter(c => !c.isDead).length,
         countActiveCamps(),
-        XP_PER_LEVEL
+        XP_PER_LEVEL,
+        false,
+        { blight: Blight }
     );
 
-    _player?.updateVisuals?.(deltaTime);
 }
 
 function countActiveCamps() {
@@ -321,7 +322,7 @@ export function renderGame(deltaTime, time = 0) {
     drawBlightZone(_ctx, Blight.center.x, Blight.center.y, Blight.currentRadius, time);
 
     for (const c of Creeps) {
-        if (!c.isDead && isObjectVisible(c, _viewportWidth, _viewportHeight)) c.draw(_ctx, time);
+        if (!c.isDead && isObjectVisible(c, _viewportWidth, _viewportHeight)) c.draw(_ctx, camera, time);
     }
 
     for (const bot of Bots) {
@@ -382,7 +383,9 @@ export function renderGame(deltaTime, time = 0) {
         blight: Blight,
         camps:  JUNGLE_CAMP_LOCATIONS,
         creeps: Creeps,
-        time:   performance.now(),
+        bots:       Bots,
+        inventory:  inventorySlotsArray(),
+        time:       performance.now(),
     });
 }
 

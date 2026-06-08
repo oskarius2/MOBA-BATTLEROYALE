@@ -6,7 +6,56 @@
 
 const ASSETS_BASE = 'assets/';
 
+const HERO_COLORS = {
+    Warrior:      ['#8b2020', '#c0392b'],
+    Mage:         ['#1a3a6a', '#3498db'],
+    Ranger:       ['#1a4a2a', '#3dba6a'],
+    'Tank-Viking':['#3a3a4a', '#7a8a9a'],
+    Hybrid:       ['#4a1a5a', '#9b27b0'],
+};
+
+const CREEP_COLORS = {
+    scout:   ['#5a1040', '#ff44aa'],
+    warrior: ['#5a3010', '#ff8800'],
+    ancient: ['#5a5010', '#ffcc44'],
+};
+
 let _instance = null;
+
+function _createPlaceholderSheet(category, key, cfg) {
+    const f = cfg.frameSize;
+    const cols = cfg.framesPerAction;
+    const rows = category === 'hero' && cfg.stances ? 2 : 1;
+    const canvas = document.createElement('canvas');
+    canvas.width = f * cols;
+    canvas.height = f * rows;
+    const ctx = canvas.getContext('2d');
+    const palette = category === 'hero'
+        ? (HERO_COLORS[key] ?? ['#2a3a2a', '#7a8a72'])
+        : (CREEP_COLORS[key] ?? ['#2a2a1a', '#aa8844']);
+
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            const x = col * f;
+            const y = row * f;
+            const grad = ctx.createRadialGradient(x + f * 0.5, y + f * 0.55, f * 0.1, x + f * 0.5, y + f * 0.5, f * 0.48);
+            grad.addColorStop(0, palette[1]);
+            grad.addColorStop(1, palette[0]);
+            ctx.fillStyle = grad;
+            ctx.fillRect(x + 4, y + 4, f - 8, f - 8);
+            ctx.strokeStyle = 'rgba(201, 162, 39, 0.35)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + 6, y + 6, f - 12, f - 12);
+            ctx.fillStyle = '#f0e6c8';
+            ctx.font = `bold ${Math.floor(f * 0.28)}px Montserrat, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const label = category === 'hero' ? (key[0] ?? '?') : key.slice(0, 2).toUpperCase();
+            ctx.fillText(label, x + f * 0.5, y + f * 0.52);
+        }
+    }
+    return canvas;
+}
 
 export class SpriteSheetManager {
     constructor() {
@@ -59,13 +108,18 @@ export class SpriteSheetManager {
                 resolve();
             };
             img.onerror = () => {
-                console.warn(`[SpriteSheetManager] Failed to load ${cfg.sheet}`);
+                console.warn(`[SpriteSheetManager] Missing ${cfg.sheet} — using procedural placeholder`);
+                const placeholder = _createPlaceholderSheet(category, key, cfg);
                 this.cache[cacheKey] = {
-                    loaded: false,
-                    failed: true,
-                    image: null,
+                    loaded: true,
+                    failed: false,
+                    placeholder: true,
+                    image: placeholder,
                     frameSize: cfg.frameSize,
                     framesPerAction: cfg.framesPerAction,
+                    stances: cfg.stances ?? null,
+                    width: placeholder.width,
+                    height: placeholder.height,
                 };
                 resolve();
             };
@@ -79,7 +133,11 @@ export class SpriteSheetManager {
 
     isReady(category, classOrType) {
         const entry = this.cache[this._resolveKey(category, classOrType)];
-        return entry?.loaded === true && !entry?.failed;
+        return entry?.loaded === true && !entry?.failed && !entry?.placeholder;
+    }
+
+    hasRealAssets(category, classOrType) {
+        return this.isReady(category, classOrType);
     }
 
     /**
@@ -110,11 +168,21 @@ export class SpriteSheetManager {
     }
 
     _actionRow(action, stance, entry) {
-        if (entry.stances && stance === 'RANGED' && action === 'idle') return 0;
+        const rows = Math.max(1, Math.floor(entry.height / entry.frameSize));
+        if (entry.stances && stance === 'RANGED') {
+            const rangedBase = Math.min(4, rows - 1);
+            switch (action) {
+                case 'walk':       return rangedBase;
+                case 'attack':     return rangedBase + 1;
+                case 'transition': return rangedBase + 2;
+                case 'idle':
+                default:           return 0;
+            }
+        }
         switch (action) {
-            case 'walk':       return 0;
-            case 'attack':     return 0;
-            case 'transition': return 0;
+            case 'walk':       return Math.min(1, rows - 1);
+            case 'attack':     return Math.min(2, rows - 1);
+            case 'transition': return Math.min(3, rows - 1);
             case 'idle':
             default:           return 0;
         }

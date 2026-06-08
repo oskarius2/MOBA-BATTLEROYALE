@@ -7,6 +7,10 @@
 import { CREEP_TYPES, PATROL_RADIUS, AGGRO_RANGE } from '../../data/world-config.js';
 import { drawCreepModel }  from '../canvas-renderer.js';
 import { resolveFacingAngle } from '../canvas-renderer.js';
+import { CreepSpriteModel } from '../rendering/creep-sprite-model.js';
+import { SpriteSheetManager } from '../rendering/sprite-sheet-manager.js';
+import { USE_SPRITE_RENDERING } from '../rendering/render-config.js';
+import { emitDamageNumber } from '../damage-events.js';
 
 export class Creep {
     constructor(x, y, typeKey, campIndex = 0) {
@@ -35,6 +39,8 @@ export class Creep {
         this.facingAngle = 0;
         this.prevX       = x;
         this.prevY       = y;
+        // Sprite system
+        this._spriteModel = null;
     }
 
     pickPatrolPoint() {
@@ -52,7 +58,7 @@ export class Creep {
 
     enterAggro() { this.state = 'AGGRO'; }
 
-    update(player) {
+    update(player, deltaTime = 16) {
         if (this.isDead) return;
         this.prevX = this.x;
         this.prevY = this.y;
@@ -93,6 +99,27 @@ export class Creep {
         this.vy = this.y - this.prevY;
         const toPlayerAngle = Math.atan2(player.y - this.y, player.x - this.x);
         this.facingAngle = resolveFacingAngle(this.vx, this.vy, toPlayerAngle);
+
+        this.updateVisuals(deltaTime);
+    }
+
+    updateVisuals(deltaTime = 16) {
+        if (USE_SPRITE_RENDERING && this._spriteModel?.isReady()) {
+            this._spriteModel.update(deltaTime, performance.now());
+        }
+    }
+
+    initializeSprites() {
+        if (!USE_SPRITE_RENDERING) {
+            this._spriteModel = null;
+            return;
+        }
+        const sheetMgr = SpriteSheetManager.getInstance();
+        if (sheetMgr.isReady('creep', this.typeKey)) {
+            this._spriteModel = new CreepSpriteModel(this, sheetMgr);
+        } else {
+            this._spriteModel = null;
+        }
     }
 
     /**
@@ -102,6 +129,9 @@ export class Creep {
     takeDamage(amount, onDeath = null) {
         if (this.isDead) return;
         this.enterAggro();
+        if (amount > 0) {
+            emitDamageNumber(this.x, this.y - this.radius, amount, 'physical');
+        }
         this.hp -= amount;
         if (this.hp <= 0) {
             this.isDead = true;
@@ -109,8 +139,13 @@ export class Creep {
         }
     }
 
-    draw(ctx, time = 0) {
+    draw(ctx, camera, time = 0) {
         if (this.isDead) return;
+
+        if (USE_SPRITE_RENDERING && this._spriteModel?.isReady()) {
+            this._spriteModel.draw(ctx, time);
+            return;
+        }
         drawCreepModel(ctx, this, time);
     }
 }

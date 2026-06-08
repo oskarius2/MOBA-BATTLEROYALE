@@ -9,6 +9,10 @@ import { resolveFacingAngle,
          drawHeroWarrior, drawHeroMage,
          drawHeroRanger,  drawHeroViking,
          drawHeroHybrid } from '../canvas-renderer.js';
+import { CharacterSpriteModel } from '../rendering/character-sprite-model.js';
+import { SpriteSheetManager } from '../rendering/sprite-sheet-manager.js';
+import { USE_SPRITE_RENDERING } from '../rendering/render-config.js';
+import { emitDamageNumber } from '../damage-events.js';
 
 const HERO_RENDERERS = {
     'Warrior':    drawHeroWarrior,
@@ -47,9 +51,16 @@ export class Player {
         this.onLevelUp   = null;   // () => void
         this.onDeath     = null;   // () => void
         this.getPointer  = null;   // () => {x, y}
+        // Sprite system
+        this._spriteModel = null;
+        this.id = 'player';
     }
 
-    update(keys) {
+    get isAlive() {
+        return this.hp > 0;
+    }
+
+    update(keys, deltaTime = 16) {
         let dx = 0, dy = 0;
         if (keys['w'] || keys['arrowup'])    dy -= 1;
         if (keys['s'] || keys['arrowdown'])  dy += 1;
@@ -74,11 +85,35 @@ export class Player {
         const ptr = this.getPointer?.() ?? { x: this.x, y: this.y };
         const aimAngle = Math.atan2(ptr.y - this.y, ptr.x - this.x);
         this.facingAngle = resolveFacingAngle(this.vx, this.vy, aimAngle);
+
+        this.updateVisuals(deltaTime);
     }
 
-    takeDamage(amount) {
+    updateVisuals(deltaTime = 16) {
+        if (USE_SPRITE_RENDERING && this._spriteModel?.isReady()) {
+            this._spriteModel.update(deltaTime, performance.now());
+        }
+    }
+
+    initializeSprites() {
+        if (!USE_SPRITE_RENDERING) {
+            this._spriteModel = null;
+            return;
+        }
+        const sheetMgr = SpriteSheetManager.getInstance();
+        if (sheetMgr.isReady('hero', this.heroClass)) {
+            this._spriteModel = new CharacterSpriteModel(this, sheetMgr);
+        } else {
+            this._spriteModel = null;
+        }
+    }
+
+    takeDamage(amount, damageType = 'physical') {
         if (this.hp <= 0) return;
         const finalDamage = this.isShielded ? amount * 0.3 : amount;
+        if (finalDamage > 0) {
+            emitDamageNumber(this.x, this.y - this.radius, finalDamage, damageType);
+        }
         this.hp = Math.max(0, this.hp - finalDamage);
         if (this.hp <= 0 && this.onDeath) this.onDeath();
     }
@@ -99,7 +134,12 @@ export class Player {
     draw(ctx, camera, time = 0) {
         const screenX  = this.x - camera.x;
         const screenY  = this.y - camera.y;
-        const speed    = Math.hypot(this.vx, this.vy);
+
+        if (USE_SPRITE_RENDERING && this._spriteModel?.isReady()) {
+            this._spriteModel.draw(ctx, screenX, screenY, time);
+            return;
+        }
+        const speed = Math.hypot(this.vx, this.vy);
         const rendererFn = HERO_RENDERERS[this.heroClass] ?? drawHeroMage;
         rendererFn(ctx, screenX, screenY, this.facingAngle, speed, time);
     }
