@@ -716,21 +716,34 @@ export function drawCreepModel(ctx, creep, time = 0) {
             ctx.rotate(angle);
             ctx.globalCompositeOperation = 'lighter';
 
-            // High-End Neon Gradient Fill
-            ctx.fillStyle = getNeonGradient(ctx, 0, 0, '#ff5500', '#ff9900', size * 2);
+            // Mechanical trapezoid head
+            ctx.fillStyle = getNeonGradient(ctx, 0, -size * 0.3, '#ff5500', '#ff9900', size * 2);
             ctx.beginPath();
-            ctx.moveTo(0, -size);
-            ctx.lineTo(size, size);
-            ctx.lineTo(-size, size);
+            ctx.moveTo(-size * 0.4, -size * 0.5);
+            ctx.lineTo(size * 0.4, -size * 0.5);
+            ctx.lineTo(size * 0.6, size * 0.2);
+            ctx.lineTo(-size * 0.6, size * 0.2);
             ctx.closePath();
             ctx.fill();
 
-            // Saturated Bloom Border
+            // Energy legs (twin energy beams)
             ctx.shadowColor = '#ff5500';
-            ctx.shadowBlur = 20;
-            ctx.strokeStyle = '#ffffff';
+            ctx.shadowBlur = 15;
+            ctx.strokeStyle = '#ffaa44';
             ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(-size * 0.3, size * 0.2);
+            ctx.lineTo(-size * 0.3, size * 0.8);
+            ctx.moveTo(size * 0.3, size * 0.2);
+            ctx.lineTo(size * 0.3, size * 0.8);
             ctx.stroke();
+
+            // Center power core
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(0, 0, size * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+
             ctx.restore();
             break;
         }
@@ -739,10 +752,10 @@ export function drawCreepModel(ctx, creep, time = 0) {
             const pulseScale = 1 + Math.sin(time * 0.008) * 0.08;
             ctx.save();
             ctx.translate(creep.x, creep.y);
-            ctx.rotate(time * 0.002); // Warrior geometric spin
+            ctx.rotate(time * 0.002);
             ctx.globalCompositeOperation = 'lighter';
 
-            // Layer 1: Heavy Octagon Neon Chassis
+            // Heavy octagon chassis
             ctx.shadowColor = '#ff0055';
             ctx.shadowBlur = 30 * pulseScale;
             ctx.fillStyle = getNeonGradient(ctx, 0, 0, '#ff0055', '#cc0033', size * 3);
@@ -756,7 +769,7 @@ export function drawCreepModel(ctx, creep, time = 0) {
             ctx.closePath();
             ctx.fill();
 
-            // Layer 2: Core Sub-Shield Orbit Ring
+            // Core shield orbit ring
             ctx.shadowColor = '#9900ff';
             ctx.shadowBlur = 15;
             ctx.fillStyle = getNeonGradient(ctx, 0, 0, '#6600cc', '#9900ff', size * pulseScale);
@@ -767,7 +780,41 @@ export function drawCreepModel(ctx, creep, time = 0) {
             break;
         }
 
-        case 'ancient':
+        case 'ancient': {
+            const tFactor = Math.sin(time * 0.003);
+            const pulseScale = 1.4 - (1.0 + (1 - Math.abs(tFactor)) * 0.4);
+            ctx.save();
+            ctx.translate(creep.x, creep.y);
+            ctx.globalCompositeOperation = 'lighter';
+
+            ctx.shadowColor = '#00ffcc';
+            ctx.shadowBlur = 45;
+            const totalSize = size * pulseScale;
+
+            // Concentric multi-layered cosmic star reactor
+            for (let level = 1; level <= 3; level++) {
+                const currentSize = totalSize * (level / 3);
+                ctx.fillStyle = getNeonGradient(ctx, 0, 0, '#00ffcc', '#00aaff', currentSize * 1.5);
+                ctx.globalAlpha = level === 2 ? 0.7 : 1.0;
+
+                ctx.beginPath();
+                for (let i = 0; i < 10; i++) {
+                    const stepAngle = (Math.PI * i) / 5 - (Math.PI / 2);
+                    const length = i % 2 === 0 ? currentSize : currentSize * 0.4;
+                    const x_coord = length * Math.cos(stepAngle) + Math.sin(time * 0.002 + i) * 2;
+                    const y_coord = length * Math.sin(stepAngle) + Math.cos(time * 0.002 + i) * 2;
+
+                    if (i === 0) ctx.moveTo(x_coord, y_coord);
+                    else ctx.lineTo(x_coord, y_coord);
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1.0;
+            ctx.restore();
+            break;
+        }
+
         case 'boss':
         case 'ancient boss':
         case 'ancient_boss': {
@@ -781,7 +828,7 @@ export function drawCreepModel(ctx, creep, time = 0) {
             ctx.shadowBlur = 45;
             const totalSize = size * pulseScale;
 
-            // Concentric multi-layered cosmic stjärnmönster
+            // Concentric multi-layered cosmic star reactor
             for (let level = 1; level <= 3; level++) {
                 const currentSize = totalSize * (level / 3);
                 ctx.fillStyle = getNeonGradient(ctx, 0, 0, '#00ffcc', '#00aaff', currentSize * 1.5);
@@ -791,7 +838,6 @@ export function drawCreepModel(ctx, creep, time = 0) {
                 for (let i = 0; i < 10; i++) {
                     const stepAngle = (Math.PI * i) / 5 - (Math.PI / 2);
                     const length = i % 2 === 0 ? currentSize : currentSize * 0.4;
-                    // Inject minor organic vibration frequency
                     const x_coord = length * Math.cos(stepAngle) + Math.sin(time * 0.002 + i) * 2;
                     const y_coord = length * Math.sin(stepAngle) + Math.cos(time * 0.002 + i) * 2;
 
@@ -801,12 +847,12 @@ export function drawCreepModel(ctx, creep, time = 0) {
                 ctx.closePath();
                 ctx.fill();
             }
+            ctx.globalAlpha = 1.0;
             ctx.restore();
             break;
         }
 
         default:
-            // Safe fallback if type mapping drifts
             ctx.save();
             ctx.translate(creep.x, creep.y);
             ctx.fillStyle = creep.fillColor || '#00ffff';
@@ -1038,6 +1084,7 @@ export function drawWeaponSwingVisuals(ctx, player, camera) {
 
 /**
  * Decorated projectile renderer with ember trails (world-space).
+ * Note: Called within camera-translated context, so use world coords directly.
  */
 export function drawDecoratedProjectile(ctx, proj, camera) {
     ctx.save();

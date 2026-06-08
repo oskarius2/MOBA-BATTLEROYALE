@@ -349,6 +349,30 @@ export function renderGame(deltaTime, time = 0) {
     _player.draw(_ctx, camera, time);
     drawFogOfWar(_ctx, _player.x, _player.y, camera, _viewportWidth, _viewportHeight);
 
+    // --- NEON CROSSHAIR ENGINE (SCREEN-SPACE) ---
+    const input = _keysRef?.input || {};
+    if (input.mouseScreenX !== undefined && input.mouseScreenY !== undefined) {
+        _ctx.save();
+        _ctx.translate(input.mouseScreenX, input.mouseScreenY);
+        _ctx.shadowColor = '#00ffff';
+        _ctx.shadowBlur = 15 + Math.sin(time * 0.005) * 3;
+        _ctx.globalCompositeOperation = 'lighter';
+        
+        // Outer ring
+        _ctx.strokeStyle = '#00ffff';
+        _ctx.lineWidth = 1.5;
+        _ctx.beginPath();
+        _ctx.arc(0, 0, 12 + Math.sin(time * 0.005) * 2, 0, Math.PI * 2);
+        _ctx.stroke();
+        
+        // Center dot
+        _ctx.fillStyle = '#ffffff';
+        _ctx.beginPath();
+        _ctx.arc(0, 0, 2, 0, Math.PI * 2);
+        _ctx.fill();
+        _ctx.restore();
+    }
+
     renderDamageNumbers(camera, _viewportWidth, _viewportHeight);
     updateMinimap({
         player: _player,
