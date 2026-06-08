@@ -8,49 +8,25 @@ import { HERO_ROSTER }             from '../data/hero-roster.js';
 import { SHOP_CATALOG }            from '../data/shop-catalog.js';
 import { JUNGLE_CAMP_LOCATIONS }   from '../data/world-config.js';
 import { Creep }                   from './entities/creep.js';
-import { resetBlight, Blight }       from './world/blight.js';
+import { resetBlight }             from './world/blight.js';
 import { camera, updateCamera }    from './camera.js';
 import { resetAbilityState }       from './ability-engine.js';
 import { playerLootState }         from './economy-engine.js';
 import { calculateItemCost }       from './economy-engine.js';
 import { initForestEnvironment }   from './canvas-renderer.js';
-import { preloadAllSprites, SpriteSheetManager } from './rendering/sprite-sheet-manager.js';
 import { updateShopUI, checkMapPresenceUI } from '../ui/shop-interface.js';
 import { markHudDirty, updateHud } from '../ui/hud.js';
-import { initMinimap } from '../ui/minimap.js';
-import { initDamageOverlay } from '../ui/damage-numbers.js';
-import { resetVisionGrid } from './vision-grid.js';
-import { resetDamageNumbers } from './damage-events.js';
 import { resetInventory, inventorySlotsArray } from './inventory.js';
 import {
     gameState, resetArrays, Creeps,
     setGameLoopRefs, setPlayerClass, gameLoop,
 } from './game-loop.js';
-import { initializeBots, resetBots } from './bot-manager.js';
 import { CooldownState } from './ability-engine.js';
 import { XP_PER_LEVEL, CANVAS_WIDTH, CANVAS_HEIGHT } from '../data/world-config.js';
 
 let _player      = null;
 let _playerClass = 'Ranger';
 let _getViewport = () => ({ width: window.innerWidth, height: window.innerHeight });
-let _spriteLoadPromise = null;
-
-export function ensureSpritesLoaded() {
-    if (!_spriteLoadPromise) {
-        _spriteLoadPromise = preloadAllSprites().catch((err) => {
-            console.warn('[Sprite preload]', err);
-        });
-    }
-    return _spriteLoadPromise;
-}
-
-export function initEntityVisuals() {
-    const sheetManager = SpriteSheetManager.getInstance();
-    _player?.initVisuals(sheetManager);
-    for (const creep of Creeps) {
-        creep.initVisuals(sheetManager);
-    }
-}
 
 export function setGameInitRefs({ player, getViewport }) {
     _player      = player;
@@ -84,7 +60,6 @@ export function applyHeroConfig(heroKey) {
     _player.valhallaRefCount = 0;
 
     setPlayerClass(hero.classKey);
-    _player?.initVisuals(SpriteSheetManager.getInstance());
 }
 
 export function setupCreeps() {
@@ -117,7 +92,6 @@ export function initializeGame() {
 
     gameState.running      = true;
     gameState.lastTime     = 0;
-    gameState.tick         = 0;
     gameState.xp           = 0;
     gameState.gold         = 0;
     gameState.totalFarmed  = 0;
@@ -142,20 +116,12 @@ export function initializeGame() {
 
     resetBlight();
     resetArrays();
-    resetBots();
-    resetVisionGrid();
-    resetDamageNumbers();
     resetInventory(markHudDirty);
-
-    initMinimap();
-    initDamageOverlay();
 
     initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 300);
     setupCreeps();
-    initializeBots();
-    initEntityVisuals();
     markHudDirty();
-    updateHud(_player, gameState, CooldownState, Creeps.length, 4, XP_PER_LEVEL, true, { blight: Blight });
+    updateHud(_player, gameState, CooldownState, Creeps.length, 4, XP_PER_LEVEL, true);
     updateShopUI(SHOP_CATALOG, _playerClass, calculateItemCost);
     checkMapPresenceUI(inventorySlotsArray());
 

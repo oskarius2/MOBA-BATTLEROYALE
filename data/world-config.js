@@ -10,7 +10,6 @@ export const CANVAS_HEIGHT = 6000;
 export const PATROL_RADIUS = 400;
 export const AGGRO_RANGE   = 1000;
 export const XP_PER_LEVEL  = 100;
-export const VISION_RADIUS = 450;
 
 export const CREEP_TYPES = {
     scout: {
@@ -61,3 +60,6 @@ export const BLIGHT_CONFIG = {
     damagePerTick: 1.5,
     shrinkSpeed:   5,
 };
+
+// Synfält-radie för spelarens fog-of-war
+export const VISION_RADIUS = 700;   // px

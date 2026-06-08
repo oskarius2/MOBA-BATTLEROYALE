@@ -2,56 +2,6 @@
 
 > **⚠️ ATTENTION ALL AI AGENTS / CURSOR DEVELOPERS:** > Read this document completely before modifying, refactoring, or generating any code in this workspace.
 
-ROADMAP FOR CHANGES IF YOU ARE LOST
-
-
-moba-battleroyale/
-├── index.html                  ← 492 rader (var 1453) — bara bootstrap
-│
-├── core/
-│   ├── balance-config.js       ← siffror: allt bor här
-│   ├── balance-validator.js    ← kör i konsolen för att validera
-│   ├── ability-engine.js       ← abilities, projektiler, partiklar
-│   ├── canvas-renderer.js      ← all rendering (orörd)
-│   ├── economy-engine.js       ← gold, loot, pity
-│   ├── camera.js               ← kamera + koordinater
-│   ├── inventory.js            ← pickup + shop-köp
-│   ├── input.js                ← tangentbord + mus
-│   ├── game-loop.js            ← update + render
-│   ├── game-init.js            ← bootstrap + setupCreeps
-│   ├── entities/
-│   │   ├── player.js           ← Player-klassen
-│   │   ├── creep.js            ← Creep-klassen
-│   │   ├── projectile.js       ← Projectile-klassen
-│   │   └── item.js             ← DroppedItem-klassen
-│   └── world/
-│       └── blight.js           ← Blight/storm-logik
-│
-├── data/
-│   ├── balance-config.js       ← (re-exporteras från core/)
-│   ├── hero-roster.js          ← 5 hjältar, kalibrerade stats
-│   ├── shop-catalog.js         ← 15 items, 3 arketyper
-│   └── world-config.js         ← CREEP_TYPES, JUNGLE_CAMPS, Blight
-│
-└── ui/
-    ├── hud.js                  ← HUD-uppdatering
-    ├── shop-interface.js       ← shop-UI (orörd)
-    └── menu-interface.js       ← meny-system (orörd)
-
-
-
----
-
-## 🖼️ SPRITE ASSETS (FIRST-TIME SETUP)
-
-Placeholder hero/creep spritesheets live under `assets/` and are tracked in git. If sheets are missing on a fresh clone, regenerate them before launching the standalone client:
-
-```powershell
-powershell -File scripts/generate-placeholder-sheets.ps1
-```
-
-Without valid sheets, `USE_SPRITE_RENDERING` falls back to procedural `drawHero*` / `drawCreepModel` routines.
-
 ---
 
 ## 🎯 THE CORE VISION: MULTIPLAYER BATTLE-ROYALE (CRITICAL)

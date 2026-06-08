@@ -5,8 +5,7 @@
     <title>Moba Battle Royale — Dark Jungle</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="ui/hud-tokens.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         html, body {
             margin: 0;
@@ -15,7 +14,7 @@
             height: 100%;
             overflow: hidden;
             background-color: #030704;
-            font-family: 'Rajdhani', 'Segoe UI', sans-serif;
+            font-family: 'Montserrat', 'Segoe UI', sans-serif;
             color: #d4cfc4;
         }
 
@@ -26,15 +25,226 @@
             overflow: hidden;
         }
 
-        #gameCanvas {
+        canvas {
             display: block;
             width: 100vw;
             height: 100vh;
             position: absolute;
             top: 0;
             left: 0;
+            box-shadow: none;
             border: none;
             background-color: #030704;
+        }
+
+        #hud-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            box-sizing: border-box;
+        }
+
+        .hud-panel {
+            background: linear-gradient(165deg, rgba(8, 18, 10, 0.88), rgba(3, 7, 4, 0.82));
+            border: 1px solid rgba(139, 105, 20, 0.35);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), inset 0 0 30px rgba(0, 0, 0, 0.2);
+            padding: 14px 16px;
+            pointer-events: none;
+        }
+
+        .hud-info {
+            position: absolute;
+            font-size: 14px;
+            letter-spacing: 0.04em;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+
+        .hud-label {
+            font-size: 10px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: #7a8a72;
+            margin-bottom: 4px;
+        }
+
+        .hud-value {
+            font-variant-numeric: tabular-nums;
+            color: #c9a227;
+            font-weight: 600;
+        }
+
+        #hud-stats {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            min-width: 220px;
+        }
+
+        #health-bar-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(192, 57, 43, 0.4);
+            margin-top: 2px;
+        }
+
+        #health-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #6a2020, #c0392b);
+            box-shadow: 0 0 8px rgba(192, 57, 43, 0.4);
+            transition: width 0.1s ease;
+        }
+
+        #xp-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(61, 186, 106, 0.35);
+            margin-top: 4px;
+        }
+
+        #xp-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #1a4a2a, #3dba6a);
+            box-shadow: 0 0 6px rgba(61, 186, 106, 0.35);
+            transition: width 0.2s ease;
+        }
+
+        #creep-info {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            text-align: right;
+            min-width: 160px;
+        }
+
+        #inventory {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .slot {
+            width: 64px;
+            height: 64px;
+            border: 1px solid rgba(139, 105, 20, 0.4);
+            background: linear-gradient(160deg, rgba(10, 20, 12, 0.9), rgba(3, 7, 4, 0.85));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            text-align: center;
+            line-height: 1.3;
+            color: #7a8a72;
+            cursor: default;
+            padding: 4px;
+            box-sizing: border-box;
+        }
+
+        #hud-cooldowns {
+            margin-top: 10px;
+            font-size: 11px;
+            letter-spacing: 0.06em;
+            color: #7a8a72;
+        }
+
+        #level-up-flash {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Cinzel', Georgia, serif;
+            font-size: clamp(32px, 5vw, 52px);
+            font-weight: 700;
+            color: #c9a227;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 30px rgba(201, 162, 39, 0.6);
+        }
+
+        #level-up-flash.active {
+            animation: levelUpPulse 0.6s ease-in-out 3;
+        }
+
+        @keyframes levelUpPulse {
+            0%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.85); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
+        }
+
+        #game-over-screen {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(15, 25, 18, 0.97), rgba(2, 5, 3, 0.98));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.45s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.45s;
+            z-index: 50;
+        }
+
+        #game-over-screen.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        #game-over-screen h1 {
+            font-family: 'Cinzel', Georgia, serif;
+            font-size: clamp(36px, 6vw, 56px);
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            color: #c0392b;
+            margin: 0 0 12px;
+            text-shadow: 0 0 40px rgba(192, 57, 43, 0.45);
+        }
+
+        #game-over-screen p {
+            font-size: 14px;
+            letter-spacing: 0.12em;
+            color: #7a8a72;
+            margin: 0;
+        }
+
+        #game-over-button {
+            margin-top: 36px;
+            padding: 16px 40px;
+            font-family: 'Cinzel', Georgia, serif;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            background: linear-gradient(180deg, #8b6914, #6b5010);
+            color: #f0e6c8;
+            border: 2px solid #c9a227;
+            cursor: pointer;
+            transition: box-shadow 0.25s, transform 0.2s;
+        }
+
+        #game-over-button:hover {
+            box-shadow: 0 0 28px rgba(201, 162, 39, 0.45);
+            transform: scale(1.03);
+        }
+
+        #game-over-button:focus-visible {
+            outline: 2px solid #c9a227;
+            outline-offset: 4px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #level-up-flash.active, #game-over-screen { animation: none; transition-duration: 0.01ms; }
         }
     </style>
 </head>
@@ -44,83 +254,31 @@
     <canvas id="gameCanvas"></canvas>
 
     <div id="hud-overlay">
-        <div id="creep-info" class="hud-panel">
+        <div id="hud-stats" class="hud-info hud-panel">
+            <div class="hud-label">Champion</div>
+            <div>Level <span class="hud-value" id="player-level">1</span> · Gold <span class="hud-value" id="player-gold">0</span></div>
+            <div class="hud-label" style="margin-top:10px;">Health</div>
+            <div id="health-bar-container">
+                <div id="health-bar"></div>
+            </div>
+            <div class="hud-label" style="margin-top:8px;">Experience <span class="hud-value" id="xp-text">0/100</span></div>
+            <div id="xp-bar-container">
+                <div id="xp-bar"></div>
+            </div>
+            <div id="hud-cooldowns">[1] Ready · [2] Ready · [3] Ready</div>
+        </div>
+
+        <div id="creep-info" class="hud-info hud-panel">
             <div class="hud-label">Battlefield</div>
             <div>Active Camps <span class="hud-value" id="creeps-count">4</span></div>
-            <div style="margin-top:6px;">Enemies <span class="hud-value" id="alive-counter">0</span></div>
+            <div style="margin-top:6px;">Enemies Remaining <span class="hud-value" id="alive-counter">0</span></div>
         </div>
 
-        <div id="hud-top-right">
-            <div id="minimap-wrap">
-                <canvas id="minimap" width="168" height="168" aria-label="Minimap"></canvas>
-            </div>
-            <div id="hud-blight" aria-live="polite">
-                <div class="blight-safe">Safe zone edge</div>
-                <div class="blight-distance">—</div>
-            </div>
+        <div id="inventory">
+            <div class="slot" id="slot-1" aria-label="Inventory slot 1">—</div>
+            <div class="slot" id="slot-2" aria-label="Inventory slot 2">—</div>
+            <div class="slot" id="slot-3" aria-label="Inventory slot 3">—</div>
         </div>
-
-        <div id="hud-action-bar">
-            <div id="hud-hero-block">
-                <div id="hud-portrait" aria-label="Hero portrait">M
-                    <span id="hud-level-badge" aria-hidden="true">1</span>
-                </div>
-                <div id="hud-stats-col">
-                    <div id="hud-hero-name">Champion</div>
-                    <div class="hud-bar-wrap" id="health-bar-container">
-                        <div class="hud-bar-fill" id="health-bar"></div>
-                        <span class="hud-bar-text" id="health-bar-text">100 / 100</span>
-                    </div>
-                    <div class="hud-bar-wrap xp" id="xp-bar-container">
-                        <div class="hud-bar-fill" id="xp-bar"></div>
-                        <span class="hud-bar-text" id="xp-bar-text">0 / 100</span>
-                    </div>
-                    <div id="hud-gold-row">Gold <span class="hud-value" id="hud-gold-value">0</span></div>
-                    <div id="hud-buffs" aria-label="Active buffs"></div>
-                </div>
-            </div>
-
-            <div id="hud-abilities-row">
-                <div class="ability-slot basic ready" data-slot="aa" aria-label="Basic attack, ready">
-                    <span class="ability-key">LMB</span>
-                    <div class="ability-icon">AA</div>
-                    <div class="ability-cd-ring"></div>
-                    <span class="ability-timer"></span>
-                    <span class="ability-name">Attack</span>
-                </div>
-                <div class="ability-slot ready" data-slot="q" aria-label="Skill 1, ready">
-                    <span class="ability-key">1</span>
-                    <div class="ability-icon">Q</div>
-                    <div class="ability-cd-ring"></div>
-                    <span class="ability-timer"></span>
-                    <span class="ability-name">Skill 1</span>
-                </div>
-                <div class="ability-slot ready" data-slot="w" aria-label="Skill 2, ready">
-                    <span class="ability-key">2</span>
-                    <div class="ability-icon">W</div>
-                    <div class="ability-cd-ring"></div>
-                    <span class="ability-timer"></span>
-                    <span class="ability-name">Skill 2</span>
-                </div>
-                <div class="ability-slot ult ready" data-slot="e" aria-label="Ultimate, ready">
-                    <span class="ability-key">3</span>
-                    <div class="ability-icon">E</div>
-                    <div class="ability-cd-ring"></div>
-                    <span class="ability-timer"></span>
-                    <span class="ability-name">Ult</span>
-                </div>
-            </div>
-
-            <div id="hud-inventory">
-                <div class="item-slot" id="slot-1" aria-label="Inventory slot 1">—</div>
-                <div class="item-slot" id="slot-2" aria-label="Inventory slot 2">—</div>
-                <div class="item-slot" id="slot-3" aria-label="Inventory slot 3">—</div>
-            </div>
-        </div>
-
-        <span id="player-level" class="sr-only" aria-hidden="true">1</span>
-        <span id="player-gold" class="sr-only" aria-hidden="true">0</span>
-        <span id="xp-text" class="sr-only" aria-hidden="true">0/100</span>
 
         <div id="level-up-flash" aria-live="polite">Level Up</div>
 
@@ -132,119 +290,78 @@
     </div>
 
     <div id="class-select-overlay">
-        <div class="menu-bg-grid" aria-hidden="true"></div>
         <div class="menu-vignette" aria-hidden="true"></div>
         <div class="menu-ember-layer" aria-hidden="true"></div>
         <div class="menu-shimmer" aria-hidden="true"></div>
-        <div class="menu-scanline" aria-hidden="true"></div>
-
-        <div class="menu-frame" aria-hidden="true">
-            <span class="frame-corner frame-tl"></span>
-            <span class="frame-corner frame-tr"></span>
-            <span class="frame-corner frame-bl"></span>
-            <span class="frame-corner frame-br"></span>
-        </div>
 
         <div class="menu-shell">
-            <header class="menu-top-bar">
-                <div class="menu-brand-mark" aria-hidden="true">MR</div>
-                <nav class="menu-breadcrumb hidden" id="menu-breadcrumb" aria-label="Menu progress">
-                    <span class="crumb done" data-step="play">Play</span>
-                    <span class="crumb-sep" aria-hidden="true"></span>
-                    <span class="crumb active" data-step="class">Pick Class</span>
-                    <span class="crumb-sep" aria-hidden="true"></span>
-                    <span class="crumb" data-step="go">Deploy</span>
-                </nav>
-                <div class="menu-version" aria-hidden="true">v0.9 · ALPHA</div>
-            </header>
+            <nav class="menu-breadcrumb hidden" id="menu-breadcrumb" aria-label="Menu progress">
+                <span class="crumb done" data-step="play">Play</span>
+                <span class="crumb-sep" aria-hidden="true">→</span>
+                <span class="crumb active" data-step="class">Pick Class</span>
+                <span class="crumb-sep" aria-hidden="true">→</span>
+                <span class="crumb" data-step="go">GO</span>
+            </nav>
 
-            <div class="menu-stage-viewport">
-                <!-- Welcome -->
-                <section class="menu-stage welcome-stage active" id="menu-stage-welcome">
-                    <div class="welcome-center">
-                        <div class="welcome-glow-ring" aria-hidden="true"></div>
-                        <div class="welcome-glow-ring welcome-glow-ring-2" aria-hidden="true"></div>
-                        <span class="welcome-pre">Welcome to</span>
-                        <div class="welcome-brand" id="welcome-brand" aria-label="MOBROYALE"></div>
-                        <p class="welcome-tagline">Dark Jungle · Last Hero Standing</p>
-                        <button type="button" class="game-btn game-btn-primary welcome-continue" id="welcome-continue-btn">
-                            <span class="btn-label">Enter the Arena</span>
-                            <span class="btn-glow" aria-hidden="true"></span>
-                        </button>
-                    </div>
-                </section>
+            <!-- Welcome -->
+            <section class="menu-stage welcome-stage active" id="menu-stage-welcome">
+                <div class="welcome-glow-ring" aria-hidden="true"></div>
+                <span class="welcome-pre">Welcome to</span>
+                <div class="welcome-brand" id="welcome-brand" aria-label="MOBROYALE"></div>
+                <p class="welcome-tagline">Dark Jungle · Last Hero Standing</p>
+                <button type="button" class="glass-btn glass-btn-primary welcome-continue" id="welcome-continue-btn">
+                    Enter
+                </button>
+            </section>
 
-                <!-- Main menu -->
-                <section class="menu-stage main-stage" id="menu-stage-main">
-                    <div class="main-stage-inner">
-                        <div class="main-logo-wrap">
-                            <h1 class="main-logo">MobRoyale</h1>
-                            <div class="main-logo-underline" aria-hidden="true"></div>
-                        </div>
-                        <p class="main-subtitle">Battle Royale in the Dark Jungle</p>
-                        <div class="main-menu-buttons">
-                            <button type="button" class="game-btn game-btn-primary" id="btn-play">
-                                <span class="btn-label">Play</span>
-                                <span class="btn-glow" aria-hidden="true"></span>
-                            </button>
-                            <button type="button" class="game-btn" id="btn-classes">
-                                <span class="btn-label">Classes</span>
-                                <span class="btn-glow" aria-hidden="true"></span>
-                            </button>
-                            <button type="button" class="game-btn" id="btn-settings">
-                                <span class="btn-label">Settings</span>
-                                <span class="btn-glow" aria-hidden="true"></span>
-                            </button>
-                        </div>
-                    </div>
-                </section>
+            <!-- Main menu -->
+            <section class="menu-stage" id="menu-stage-main">
+                <h1 class="main-logo">MobRoyale</h1>
+                <p class="main-subtitle">Battle Royale in the Dark Jungle</p>
+                <div class="main-menu-buttons">
+                    <button type="button" class="glass-btn glass-btn-primary" id="btn-play">Play</button>
+                    <button type="button" class="glass-btn" id="btn-classes">Classes</button>
+                    <button type="button" class="glass-btn" id="btn-settings">Settings</button>
+                </div>
+            </section>
 
-                <!-- Class select -->
-                <section class="menu-stage class-stage" id="menu-stage-class-select">
-                    <header class="class-stage-header">
-                        <h2>Pick Your Class</h2>
-                        <p>Choose your path into the forest</p>
-                    </header>
-                    <div class="menu-body">
-                        <div class="hero-card-grid" id="hero-card-grid" role="listbox" aria-label="Hero selection"></div>
-                        <aside class="hero-details-pane" id="hero-details-pane" aria-live="polite">
-                            <div class="details-empty">Select a champion<br>to begin</div>
-                        </aside>
-                    </div>
-                    <footer class="class-stage-footer">
-                        <button type="button" class="game-btn game-btn-back" id="btn-class-back">
-                            <span class="btn-label">Back</span>
-                        </button>
-                        <button type="button" class="game-btn game-btn-deploy" id="enter-forest-btn">
-                            <span class="btn-label">Deploy</span>
-                            <span class="btn-glow" aria-hidden="true"></span>
-                        </button>
-                    </footer>
-                </section>
+            <!-- Class select -->
+            <section class="menu-stage" id="menu-stage-class-select">
+                <header class="class-stage-header">
+                    <h2>Pick Your Class</h2>
+                    <p>Choose your path into the forest</p>
+                </header>
+                <div class="menu-body">
+                    <div class="hero-card-grid" id="hero-card-grid" role="listbox" aria-label="Hero selection"></div>
+                    <aside class="hero-details-pane" id="hero-details-pane" aria-live="polite">
+                        <div class="details-empty">Select a champion<br>to begin</div>
+                    </aside>
+                </div>
+                <footer class="class-stage-footer">
+                    <button type="button" class="glass-btn glass-btn-back" id="btn-class-back">← Back</button>
+                    <button type="button" class="glass-btn glass-btn-go" id="enter-forest-btn">GO</button>
+                </footer>
+            </section>
 
-                <!-- Settings -->
-                <section class="menu-stage settings-stage" id="menu-stage-settings">
-                    <div class="settings-panel">
-                        <div class="panel-corners" aria-hidden="true"></div>
-                        <h2>Settings</h2>
-                        <div class="settings-row">
-                            <span>Master Volume</span>
-                            <button type="button" class="settings-toggle on" aria-label="Toggle master volume"></button>
-                        </div>
-                        <div class="settings-row">
-                            <span>Screen Shake</span>
-                            <button type="button" class="settings-toggle on" aria-label="Toggle screen shake"></button>
-                        </div>
-                        <div class="settings-row">
-                            <span>Show Damage Numbers</span>
-                            <button type="button" class="settings-toggle" aria-label="Toggle damage numbers"></button>
-                        </div>
-                        <button type="button" class="game-btn game-btn-back settings-back" id="btn-settings-back">
-                            <span class="btn-label">Back</span>
-                        </button>
+            <!-- Settings -->
+            <section class="menu-stage" id="menu-stage-settings">
+                <div class="settings-panel">
+                    <h2>Settings</h2>
+                    <div class="settings-row">
+                        <span>Master Volume</span>
+                        <button type="button" class="settings-toggle on" aria-label="Toggle master volume"></button>
                     </div>
-                </section>
-            </div>
+                    <div class="settings-row">
+                        <span>Screen Shake</span>
+                        <button type="button" class="settings-toggle on" aria-label="Toggle screen shake"></button>
+                    </div>
+                    <div class="settings-row">
+                        <span>Show Damage Numbers</span>
+                        <button type="button" class="settings-toggle" aria-label="Toggle damage numbers"></button>
+                    </div>
+                    <button type="button" class="glass-btn glass-btn-back" id="btn-settings-back" style="width:100%;margin-top:8px;">← Back</button>
+                </div>
+            </section>
         </div>
     </div>
 </div>
@@ -284,7 +401,7 @@ import { initInput, keysPressed, pointerWorld } from './core/input.js';
 import { camera, getWorldCoordinates, updateCamera } from './core/camera.js';
 import { buyItem }         from './core/inventory.js';
 import { setGameLoopRefs, setKeysRef, gameState } from './core/game-loop.js';
-import { setGameInitRefs, initializeGame, applyHeroConfig, showGameOver, resetGame, getPlayerClass, ensureSpritesLoaded } from './core/game-init.js';
+import { setGameInitRefs, initializeGame, applyHeroConfig, showGameOver, resetGame, getPlayerClass } from './core/game-init.js';
 import { showLevelUpFlash, markHudDirty } from './ui/hud.js';
 import { toggleShopUI, isShopOpen, updateShopUI } from './ui/shop-interface.js';
 import { initHeroSelectMenu, showClassSelectMenu, selectHero, buildWelcomeLetters } from './ui/menu-interface.js';
@@ -293,7 +410,7 @@ import AbilityEngine, { CooldownState } from './core/ability-engine.js';
 import { SHOP_CATALOG }    from './data/shop-catalog.js';
 import { HERO_ROSTER }     from './data/hero-roster.js';
 import { calculateItemCost } from './core/economy-engine.js';
-import { gameLoop, Projectiles, Creeps, onViewportResize } from './core/game-loop.js';
+import { gameLoop, Projectiles, Creeps } from './core/game-loop.js';
 
 // ─── CANVAS ───────────────────────────────────────────────────
 const canvas = document.getElementById('gameCanvas');
@@ -348,7 +465,6 @@ window.addEventListener('resize', () => {
     VIEWPORT_WIDTH  = window.innerWidth;
     VIEWPORT_HEIGHT = window.innerHeight;
     updateCamera(PlayerInstance, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-    onViewportResize();
     if (gameState.selectedClass) {
         updateShopUI(SHOP_CATALOG, getPlayerClass(), calculateItemCost);
     }
@@ -363,9 +479,7 @@ window.buyItem    = (itemId) => buyItem(itemId, getPlayerClass(), gameState, Pla
 // ─── ONLOAD ───────────────────────────────────────────────────
 window.onload = () => {
     buildWelcomeLetters();
-    ensureSpritesLoaded();
-    initHeroSelectMenu(HERO_ROSTER, async (heroKey) => {
-        await ensureSpritesLoaded();
+    initHeroSelectMenu(HERO_ROSTER, (heroKey) => {
         applyHeroConfig(heroKey);
         initializeGame();
     });

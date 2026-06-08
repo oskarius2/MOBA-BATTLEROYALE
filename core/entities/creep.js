@@ -5,10 +5,8 @@
 // ============================================================
 
 import { CREEP_TYPES, PATROL_RADIUS, AGGRO_RANGE } from '../../data/world-config.js';
-import { emitDamageNumber } from '../damage-events.js';
-import { drawCreepModel, resolveFacingAngle } from '../canvas-renderer.js';
-import { USE_SPRITE_RENDERING } from '../rendering/render-config.js';
-import { CreepSpriteModel } from '../rendering/creep-sprite-model.js';
+import { drawCreepModel }  from '../canvas-renderer.js';
+import { resolveFacingAngle } from '../canvas-renderer.js';
 
 export class Creep {
     constructor(x, y, typeKey, campIndex = 0) {
@@ -37,16 +35,6 @@ export class Creep {
         this.facingAngle = 0;
         this.prevX       = x;
         this.prevY       = y;
-        this._spriteModel = null;
-    }
-
-    initVisuals(sheetManager) {
-        if (!sheetManager) return;
-        this._spriteModel = new CreepSpriteModel(this, sheetManager);
-    }
-
-    updateVisuals(deltaTime) {
-        this._spriteModel?.update(deltaTime);
     }
 
     pickPatrolPoint() {
@@ -64,12 +52,8 @@ export class Creep {
 
     enterAggro() { this.state = 'AGGRO'; }
 
-    update(player, deltaTime) {
+    update(player) {
         if (this.isDead) return;
-        
-        // Ensure we default deltaTime safely if it's missing (fallback: 16ms @ 60 FPS)
-        const dt = deltaTime !== undefined ? deltaTime : 0.016;
-        
         this.prevX = this.x;
         this.prevY = this.y;
 
@@ -82,9 +66,8 @@ export class Creep {
             const dy   = player.y - this.y;
             const dist = Math.hypot(dx, dy);
             if (dist > 1) {
-                // Scaled via frame-driven deltaTime (dt * 60 maintains 60 FPS baseline)
-                this.x += (dx / dist) * this.speed * dt * 60;
-                this.y += (dy / dist) * this.speed * dt * 60;
+                this.x += (dx / dist) * this.speed;
+                this.y += (dy / dist) * this.speed;
             }
         } else {
             const dx   = this.patrolTarget.x - this.x;
@@ -93,18 +76,16 @@ export class Creep {
             if (dist < 8) {
                 this.patrolTarget = this.pickPatrolPoint();
             } else {
-                this.x += (dx / dist) * this.speed * 0.6 * dt * 60;
-                this.y += (dy / dist) * this.speed * 0.6 * dt * 60;
+                this.x += (dx / dist) * this.speed * 0.6;
+                this.y += (dy / dist) * this.speed * 0.6;
             }
             const distFromSpawn = Math.hypot(this.x - this.spawnX, this.y - this.spawnY);
             if (distFromSpawn > PATROL_RADIUS) {
                 const bx = this.spawnX - this.x;
                 const by = this.spawnY - this.y;
                 const bd = Math.hypot(bx, by);
-                if (bd > 0) {
-                    this.x += (bx / bd) * this.speed * 0.8 * dt * 60;
-                    this.y += (by / bd) * this.speed * 0.8 * dt * 60;
-                }
+                this.x += (bx / bd) * this.speed * 0.8;
+                this.y += (by / bd) * this.speed * 0.8;
             }
         }
 
@@ -121,9 +102,6 @@ export class Creep {
     takeDamage(amount, onDeath = null) {
         if (this.isDead) return;
         this.enterAggro();
-        if (amount > 0) {
-            emitDamageNumber(this.x, this.y - this.radius, amount, 'physical');
-        }
         this.hp -= amount;
         if (this.hp <= 0) {
             this.isDead = true;
@@ -133,12 +111,6 @@ export class Creep {
 
     draw(ctx, time = 0) {
         if (this.isDead) return;
-
-        if (USE_SPRITE_RENDERING && this._spriteModel?.isReady()) {
-            this._spriteModel.draw(ctx, time);
-            return;
-        }
-
         drawCreepModel(ctx, this, time);
     }
 }

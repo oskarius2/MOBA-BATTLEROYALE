@@ -4,14 +4,11 @@
 // ============================================================
 
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../../data/world-config.js';
-import { emitDamageNumber } from '../damage-events.js';
 import { getLevelUpGrowth }            from '../../data/hero-roster.js';
 import { resolveFacingAngle,
          drawHeroWarrior, drawHeroMage,
          drawHeroRanger,  drawHeroViking,
          drawHeroHybrid } from '../canvas-renderer.js';
-import { USE_SPRITE_RENDERING } from '../rendering/render-config.js';
-import { CharacterSpriteModel } from '../rendering/character-sprite-model.js';
 
 const HERO_RENDERERS = {
     'Warrior':    drawHeroWarrior,
@@ -23,7 +20,6 @@ const HERO_RENDERERS = {
 
 export class Player {
     constructor(x, y) {
-        this.id               = 'local-player';
         this.x                = x;
         this.y                = y;
         this.radius           = 25;
@@ -47,15 +43,10 @@ export class Player {
         this.vx               = 0;
         this.vy               = 0;
         this.facingAngle      = 0;
-        this._spriteModel     = null;
         // Callbacks injiceras av game-init
         this.onLevelUp   = null;   // () => void
         this.onDeath     = null;   // () => void
         this.getPointer  = null;   // () => {x, y}
-    }
-
-    get isAlive() {
-        return this.hp > 0;
     }
 
     update(keys) {
@@ -68,7 +59,6 @@ export class Player {
         const mag       = Math.sqrt(dx * dx + dy * dy);
         const moveSpeed = this.speed * (this.speedModifier ?? 1);
         if (mag > 0) {
-            // Rör sig direkt i World-space med full hastighet per frame
             this.vx = (dx / mag) * moveSpeed;
             this.vy = (dy / mag) * moveSpeed;
             this.x += this.vx;
@@ -78,7 +68,6 @@ export class Player {
             this.vy = 0;
         }
 
-        // Clamp spelaren inom kartkanter i World-space
         this.x = Math.max(this.radius, Math.min(CANVAS_WIDTH  - this.radius, this.x));
         this.y = Math.max(this.radius, Math.min(CANVAS_HEIGHT - this.radius, this.y));
 
@@ -87,12 +76,9 @@ export class Player {
         this.facingAngle = resolveFacingAngle(this.vx, this.vy, aimAngle);
     }
 
-    takeDamage(amount, damageType = 'physical') {
+    takeDamage(amount) {
         if (this.hp <= 0) return;
         const finalDamage = this.isShielded ? amount * 0.3 : amount;
-        if (finalDamage > 0.5) {
-            emitDamageNumber(this.x, this.y - this.radius, finalDamage, damageType);
-        }
         this.hp = Math.max(0, this.hp - finalDamage);
         if (this.hp <= 0 && this.onDeath) this.onDeath();
     }
@@ -110,25 +96,10 @@ export class Player {
         if (this.onLevelUp) this.onLevelUp();
     }
 
-    initVisuals(sheetManager) {
-        if (!sheetManager) return;
-        this._spriteModel = new CharacterSpriteModel(this, sheetManager);
-    }
-
-    updateVisuals(deltaTime) {
-        this._spriteModel?.update(deltaTime);
-    }
-
     draw(ctx, camera, time = 0) {
         const screenX  = this.x - camera.x;
         const screenY  = this.y - camera.y;
         const speed    = Math.hypot(this.vx, this.vy);
-
-        if (USE_SPRITE_RENDERING && this._spriteModel?.isReady()) {
-            this._spriteModel.draw(ctx, screenX, screenY, time);
-            return;
-        }
-
         const rendererFn = HERO_RENDERERS[this.heroClass] ?? drawHeroMage;
         rendererFn(ctx, screenX, screenY, this.facingAngle, speed, time);
     }

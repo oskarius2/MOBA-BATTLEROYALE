@@ -26,32 +26,18 @@ function nextFreeSlot() {
 }
 
 function slotElementId(slot) {
-    return slot.replace('slot', 'slot-');
-}
-
-function applySlotStyle(el, item) {
-    if (!el) return;
-    el.classList.remove('filled', 'offensive', 'defensive', 'utility');
-    if (!item) {
-        el.textContent = '—';
-        el.style.boxShadow = '';
-        return;
-    }
-    el.classList.add('filled');
-    const arch = item.archetype ?? 'utility';
-    if (arch === 'offensive' || arch === 'defensive' || arch === 'utility') {
-        el.classList.add(arch);
-    }
-    el.style.boxShadow = '0 0 12px rgba(201, 162, 39, 0.35)';
+    return slot.replace('slot', 'slot-');   // 'slot1' → 'slot-1'
 }
 
 export function resetInventory(onChanged) {
     inventoryItems.slot1 = null;
     inventoryItems.slot2 = null;
     inventoryItems.slot3 = null;
-    ['slot-1', 'slot-2', 'slot-3'].forEach(id => {
+    ['slot-1','slot-2','slot-3'].forEach(id => {
         const el = document.getElementById(id);
-        applySlotStyle(el, null);
+        if (!el) return;
+        el.textContent  = `[${id.replace('-', ' ').toUpperCase()}]`;
+        el.style.boxShadow = '';
     });
     if (onChanged) onChanged();
 }
@@ -67,14 +53,9 @@ export function collectItem(item, onChanged) {
     if (!slot) return;
 
     const el = document.getElementById(slotElementId(slot));
-    const lootItem = {
-        name: item.name,
-        type: item.type,
-        archetype: 'utility',
-    };
     if (el) {
-        el.textContent = item.name;
-        applySlotStyle(el, lootItem);
+        el.textContent     = `${item.name} (${item.type})`;
+        el.style.boxShadow = '0 0 15px rgba(201, 162, 39, 0.5)';
     }
 
     inventoryItems[slot] = item;
@@ -115,15 +96,19 @@ export function buyItem(itemId, playerClass, gameState, player, onChanged) {
         power:       1,
     };
 
+    // HP-bonus appliceras direkt
     if (purchasedItem.stats.hp && player) {
         player.maxHp += purchasedItem.stats.hp;
         player.hp     = Math.min(player.hp + purchasedItem.stats.hp, player.maxHp);
     }
 
+    const rarityLabel = catalogItem.archetype === 'offensive' ? 'ATK'
+                      : catalogItem.archetype === 'defensive' ? 'DEF' : 'UTL';
+
     const el = document.getElementById(slotElementId(slot));
     if (el) {
-        el.textContent = purchasedItem.name;
-        applySlotStyle(el, purchasedItem);
+        el.textContent     = `${purchasedItem.name} [${rarityLabel}]`;
+        el.style.boxShadow = '0 0 15px rgba(201, 162, 39, 0.5)';
     }
 
     inventoryItems[slot] = purchasedItem;

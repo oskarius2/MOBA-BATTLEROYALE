@@ -126,7 +126,7 @@ function checkPowerMonotonic() {
 }
 
 function checkBountyCap() {
-    const huge = computeBounty(1_000_000);
+    const huge = computeBounty(1000000);
     return {
         check:  'Kill-bounty cappas vid 240g',
         pass:   huge <= ECONOMY_CONFIG.killBountyCap,
