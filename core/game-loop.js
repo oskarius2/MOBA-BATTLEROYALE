@@ -108,6 +108,9 @@ export function updateGameLogic(deltaTime) {
     _player.speedModifier = getTerrainType(_player.x, _player.y) === 'WATER' ? 0.7 : 1.0;
     _player.update(keysRef());
 
+    // KRITISK FIX: Uppdatera kameran INNAN creep-AI körs så att de använder den senaste spelarposition
+    updateCamera(_player, _viewportWidth, _viewportHeight);
+
     updateBlight(deltaTime);
 
     gameState.tick += 1;
@@ -363,7 +366,6 @@ export function gameLoop(timestamp) {
     gameState.lastTime = timestamp;
 
     if (gameState.running) {
-        updateCamera(_player, _viewportWidth, _viewportHeight);
         updateGameLogic(deltaTime);
         renderGame(deltaTime, timestamp);
         requestAnimationFrame(gameLoop);

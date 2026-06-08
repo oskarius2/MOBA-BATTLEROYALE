@@ -68,6 +68,7 @@ export class Player {
         const mag       = Math.sqrt(dx * dx + dy * dy);
         const moveSpeed = this.speed * (this.speedModifier ?? 1);
         if (mag > 0) {
+            // Rör sig direkt i World-space med full hastighet per frame
             this.vx = (dx / mag) * moveSpeed;
             this.vy = (dy / mag) * moveSpeed;
             this.x += this.vx;
@@ -77,6 +78,7 @@ export class Player {
             this.vy = 0;
         }
 
+        // Clamp spelaren inom kartkanter i World-space
         this.x = Math.max(this.radius, Math.min(CANVAS_WIDTH  - this.radius, this.x));
         this.y = Math.max(this.radius, Math.min(CANVAS_HEIGHT - this.radius, this.y));
 
