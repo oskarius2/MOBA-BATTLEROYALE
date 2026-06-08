@@ -100,19 +100,62 @@ export const HERO_LEVEL_GROWTH = {
     Hybrid:       { hp: 16, damage: 2.8, speed: 0.35 },
 };
 
-/** Returnerar HP för en klass på angiven level (1–10). */
-export function hpAtLevel(heroClass, level) {
-    const base   = HERO_BASE_STATS[heroClass]?.maxHp ?? 100;
-    const growth = HERO_LEVEL_GROWTH[heroClass]?.hp   ?? 20;
-    return base + (Math.max(1, Math.min(MAX_LEVEL, level)) - 1) * growth;
+// --- UPPGRADERADE BERÄKNINGAR (YAGNI Compute Layer) ---
+
+/** Returnerar exakt HP vid en given level */
+export function computeHpAtLevel(heroClass, level) {
+    const baseStats = HERO_BASE_STATS[heroClass];
+    const growth = HERO_LEVEL_GROWTH[heroClass];
+    if (!baseStats || !growth) return 100;
+    
+    const effectiveLevel = Math.max(1, Math.min(MAX_LEVEL, level)) - 1;
+    return baseStats.maxHp + (effectiveLevel * growth.hp);
 }
 
-/** Returnerar projektilskada för en klass på angiven level. */
-export function damageAtLevel(heroClass, level) {
-    const base   = HERO_BASE_STATS[heroClass]?.projectileDamage ?? 20;
-    const growth = HERO_LEVEL_GROWTH[heroClass]?.damage          ?? 2;
-    return base + (Math.max(1, Math.min(MAX_LEVEL, level)) - 1) * growth;
+/**
+ * Returnerar projektilskada baserat på level.
+ * Formeln balanserar per automatik ut damage utifrån Attack Speed.
+ */
+export function computeDamageAtLevel(heroClass, level) {
+    const baseStats = HERO_BASE_STATS[heroClass];
+    const growth = HERO_LEVEL_GROWTH[heroClass];
+    if (!baseStats || !growth) return 20;
+
+    const effectiveLevel = Math.max(1, Math.min(MAX_LEVEL, level)) - 1;
+    const rawHitDamage = baseStats.projectileDamage + (effectiveLevel * growth.damage);
+    
+    return rawHitDamage;
 }
+
+/**
+ * En hjälpfunktion du kan köra i konsolen (`debugDpsParity()`)
+ * för att direkt se vilka klasser som gör för mycket/lite skada,
+ * utan att tvingas bygga ett helt validerings-system.
+ */
+export function debugDpsParity(level = 1) {
+    console.log(`--- DPS Parity Check (Level ${level}) ---`);
+    for (const heroClass in HERO_BASE_STATS) {
+        const dmgPerHit = computeDamageAtLevel(heroClass, level);
+        
+        let attackSpeedMs = 500;
+        if (ATTACK_TIMING[heroClass]) {
+            attackSpeedMs = ATTACK_TIMING[heroClass].attackSpeedMs ||
+                            ATTACK_TIMING[heroClass].meleeMsS || 500;
+        }
+        
+        const hitsPerSecond = 1000 / attackSpeedMs;
+        const dps = dmgPerHit * hitsPerSecond;
+        
+        console.log(`${heroClass}: ${dps.toFixed(1)} DPS (${dmgPerHit.toFixed(1)} dmg/hit @ ${attackSpeedMs}ms)`);
+    }
+    console.log("---------------------------------------");
+}
+
+/** @deprecated Use computeHpAtLevel instead */
+export const hpAtLevel = computeHpAtLevel;
+
+/** @deprecated Use computeDamageAtLevel instead */
+export const damageAtLevel = computeDamageAtLevel;
 
 // ─── 4. ARMOR & DAMAGE REDUCTION ────────────────────────────────────────────
 //

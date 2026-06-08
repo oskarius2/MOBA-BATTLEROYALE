@@ -39,8 +39,9 @@ import {
 
 // ─── KONSTANTER ─────────────────────────────────────────────────────────────
 
-// Multipliers för basic attacks — hårdkodade i ability-engine.js.
-// TODO: flytta in i ABILITY_CONFIG som BASIC_ATTACK_MULT vid nästa ability-engine-pass.
+// Multipliers för basic attacks — implementerade i core/abilities/basic-attack.js.
+// Ability AoE/cone (Q/W/E) träffar creeps + bots via QueryEngine/damage-applier.js.
+// TODO: flytta BASIC_ATTACK_MULT in i ABILITY_CONFIG.
 const BASIC_ATTACK_MULT = {
     Warrior:      1.2,   // cfg.BASE_DAMAGE_MULTIPLIER
     'Tank-Viking':0.8,   // hårdkodad i processBasicAttack
