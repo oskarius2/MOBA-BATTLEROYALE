@@ -5,7 +5,7 @@
     <title>Moba Battle Royale — Dark Jungle</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="ui/hud-tokens.css">
     <style>
         html, body {
@@ -15,7 +15,7 @@
             height: 100%;
             overflow: hidden;
             background-color: #030704;
-            font-family: 'Montserrat', 'Segoe UI', sans-serif;
+            font-family: 'Rajdhani', 'Segoe UI', sans-serif;
             color: #d4cfc4;
         }
 
@@ -132,78 +132,119 @@
     </div>
 
     <div id="class-select-overlay">
+        <div class="menu-bg-grid" aria-hidden="true"></div>
         <div class="menu-vignette" aria-hidden="true"></div>
         <div class="menu-ember-layer" aria-hidden="true"></div>
         <div class="menu-shimmer" aria-hidden="true"></div>
+        <div class="menu-scanline" aria-hidden="true"></div>
+
+        <div class="menu-frame" aria-hidden="true">
+            <span class="frame-corner frame-tl"></span>
+            <span class="frame-corner frame-tr"></span>
+            <span class="frame-corner frame-bl"></span>
+            <span class="frame-corner frame-br"></span>
+        </div>
 
         <div class="menu-shell">
-            <nav class="menu-breadcrumb hidden" id="menu-breadcrumb" aria-label="Menu progress">
-                <span class="crumb done" data-step="play">Play</span>
-                <span class="crumb-sep" aria-hidden="true">→</span>
-                <span class="crumb active" data-step="class">Pick Class</span>
-                <span class="crumb-sep" aria-hidden="true">→</span>
-                <span class="crumb" data-step="go">GO</span>
-            </nav>
+            <header class="menu-top-bar">
+                <div class="menu-brand-mark" aria-hidden="true">MR</div>
+                <nav class="menu-breadcrumb hidden" id="menu-breadcrumb" aria-label="Menu progress">
+                    <span class="crumb done" data-step="play">Play</span>
+                    <span class="crumb-sep" aria-hidden="true"></span>
+                    <span class="crumb active" data-step="class">Pick Class</span>
+                    <span class="crumb-sep" aria-hidden="true"></span>
+                    <span class="crumb" data-step="go">Deploy</span>
+                </nav>
+                <div class="menu-version" aria-hidden="true">v0.9 · ALPHA</div>
+            </header>
 
-            <!-- Welcome -->
-            <section class="menu-stage welcome-stage active" id="menu-stage-welcome">
-                <div class="welcome-glow-ring" aria-hidden="true"></div>
-                <span class="welcome-pre">Welcome to</span>
-                <div class="welcome-brand" id="welcome-brand" aria-label="MOBROYALE"></div>
-                <p class="welcome-tagline">Dark Jungle · Last Hero Standing</p>
-                <button type="button" class="glass-btn glass-btn-primary welcome-continue" id="welcome-continue-btn">
-                    Enter
-                </button>
-            </section>
-
-            <!-- Main menu -->
-            <section class="menu-stage" id="menu-stage-main">
-                <h1 class="main-logo">MobRoyale</h1>
-                <p class="main-subtitle">Battle Royale in the Dark Jungle</p>
-                <div class="main-menu-buttons">
-                    <button type="button" class="glass-btn glass-btn-primary" id="btn-play">Play</button>
-                    <button type="button" class="glass-btn" id="btn-classes">Classes</button>
-                    <button type="button" class="glass-btn" id="btn-settings">Settings</button>
-                </div>
-            </section>
-
-            <!-- Class select -->
-            <section class="menu-stage" id="menu-stage-class-select">
-                <header class="class-stage-header">
-                    <h2>Pick Your Class</h2>
-                    <p>Choose your path into the forest</p>
-                </header>
-                <div class="menu-body">
-                    <div class="hero-card-grid" id="hero-card-grid" role="listbox" aria-label="Hero selection"></div>
-                    <aside class="hero-details-pane" id="hero-details-pane" aria-live="polite">
-                        <div class="details-empty">Select a champion<br>to begin</div>
-                    </aside>
-                </div>
-                <footer class="class-stage-footer">
-                    <button type="button" class="glass-btn glass-btn-back" id="btn-class-back">← Back</button>
-                    <button type="button" class="glass-btn glass-btn-go" id="enter-forest-btn">GO</button>
-                </footer>
-            </section>
-
-            <!-- Settings -->
-            <section class="menu-stage" id="menu-stage-settings">
-                <div class="settings-panel">
-                    <h2>Settings</h2>
-                    <div class="settings-row">
-                        <span>Master Volume</span>
-                        <button type="button" class="settings-toggle on" aria-label="Toggle master volume"></button>
+            <div class="menu-stage-viewport">
+                <!-- Welcome -->
+                <section class="menu-stage welcome-stage active" id="menu-stage-welcome">
+                    <div class="welcome-center">
+                        <div class="welcome-glow-ring" aria-hidden="true"></div>
+                        <div class="welcome-glow-ring welcome-glow-ring-2" aria-hidden="true"></div>
+                        <span class="welcome-pre">Welcome to</span>
+                        <div class="welcome-brand" id="welcome-brand" aria-label="MOBROYALE"></div>
+                        <p class="welcome-tagline">Dark Jungle · Last Hero Standing</p>
+                        <button type="button" class="game-btn game-btn-primary welcome-continue" id="welcome-continue-btn">
+                            <span class="btn-label">Enter the Arena</span>
+                            <span class="btn-glow" aria-hidden="true"></span>
+                        </button>
                     </div>
-                    <div class="settings-row">
-                        <span>Screen Shake</span>
-                        <button type="button" class="settings-toggle on" aria-label="Toggle screen shake"></button>
+                </section>
+
+                <!-- Main menu -->
+                <section class="menu-stage main-stage" id="menu-stage-main">
+                    <div class="main-stage-inner">
+                        <div class="main-logo-wrap">
+                            <h1 class="main-logo">MobRoyale</h1>
+                            <div class="main-logo-underline" aria-hidden="true"></div>
+                        </div>
+                        <p class="main-subtitle">Battle Royale in the Dark Jungle</p>
+                        <div class="main-menu-buttons">
+                            <button type="button" class="game-btn game-btn-primary" id="btn-play">
+                                <span class="btn-label">Play</span>
+                                <span class="btn-glow" aria-hidden="true"></span>
+                            </button>
+                            <button type="button" class="game-btn" id="btn-classes">
+                                <span class="btn-label">Classes</span>
+                                <span class="btn-glow" aria-hidden="true"></span>
+                            </button>
+                            <button type="button" class="game-btn" id="btn-settings">
+                                <span class="btn-label">Settings</span>
+                                <span class="btn-glow" aria-hidden="true"></span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="settings-row">
-                        <span>Show Damage Numbers</span>
-                        <button type="button" class="settings-toggle" aria-label="Toggle damage numbers"></button>
+                </section>
+
+                <!-- Class select -->
+                <section class="menu-stage class-stage" id="menu-stage-class-select">
+                    <header class="class-stage-header">
+                        <h2>Pick Your Class</h2>
+                        <p>Choose your path into the forest</p>
+                    </header>
+                    <div class="menu-body">
+                        <div class="hero-card-grid" id="hero-card-grid" role="listbox" aria-label="Hero selection"></div>
+                        <aside class="hero-details-pane" id="hero-details-pane" aria-live="polite">
+                            <div class="details-empty">Select a champion<br>to begin</div>
+                        </aside>
                     </div>
-                    <button type="button" class="glass-btn glass-btn-back" id="btn-settings-back" style="width:100%;margin-top:8px;">← Back</button>
-                </div>
-            </section>
+                    <footer class="class-stage-footer">
+                        <button type="button" class="game-btn game-btn-back" id="btn-class-back">
+                            <span class="btn-label">Back</span>
+                        </button>
+                        <button type="button" class="game-btn game-btn-deploy" id="enter-forest-btn">
+                            <span class="btn-label">Deploy</span>
+                            <span class="btn-glow" aria-hidden="true"></span>
+                        </button>
+                    </footer>
+                </section>
+
+                <!-- Settings -->
+                <section class="menu-stage settings-stage" id="menu-stage-settings">
+                    <div class="settings-panel">
+                        <div class="panel-corners" aria-hidden="true"></div>
+                        <h2>Settings</h2>
+                        <div class="settings-row">
+                            <span>Master Volume</span>
+                            <button type="button" class="settings-toggle on" aria-label="Toggle master volume"></button>
+                        </div>
+                        <div class="settings-row">
+                            <span>Screen Shake</span>
+                            <button type="button" class="settings-toggle on" aria-label="Toggle screen shake"></button>
+                        </div>
+                        <div class="settings-row">
+                            <span>Show Damage Numbers</span>
+                            <button type="button" class="settings-toggle" aria-label="Toggle damage numbers"></button>
+                        </div>
+                        <button type="button" class="game-btn game-btn-back settings-back" id="btn-settings-back">
+                            <span class="btn-label">Back</span>
+                        </button>
+                    </div>
+                </section>
+            </div>
         </div>
     </div>
 </div>

@@ -697,18 +697,124 @@ export function drawCreepModel(ctx, creep, time = 0) {
         ctx.restore();
     }
 
-    switch (creep.typeKey) {
-        case 'scout':
-            drawScoutSprite(ctx, creep.x, creep.y, angle, time, hpRatio);
+    // Helper function for sub-layer ambient neon gradients
+    function getNeonGradient(cCtx, cX, cY, colorStart, colorEnd, size) {
+        const gradient = cCtx.createRadialGradient(cX, cY, 0, cX, cY, size);
+        gradient.addColorStop(0, colorStart + "aa");
+        gradient.addColorStop(0.6, colorEnd);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        return gradient;
+    }
+
+    // Capture baseline configuration parameters
+    const size = creep.radius || 20;
+
+    switch (creep.typeKey.toLowerCase()) {
+        case 'scout': {
+            ctx.save();
+            ctx.translate(creep.x, creep.y);
+            ctx.rotate(angle);
+            ctx.globalCompositeOperation = 'lighter';
+
+            // High-End Neon Gradient Fill
+            ctx.fillStyle = getNeonGradient(ctx, 0, 0, '#ff5500', '#ff9900', size * 2);
+            ctx.beginPath();
+            ctx.moveTo(0, -size);
+            ctx.lineTo(size, size);
+            ctx.lineTo(-size, size);
+            ctx.closePath();
+            ctx.fill();
+
+            // Saturated Bloom Border
+            ctx.shadowColor = '#ff5500';
+            ctx.shadowBlur = 20;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.restore();
             break;
-        case 'warrior':
-            drawWarriorBeast(ctx, creep.x, creep.y, angle, time, hpRatio);
+        }
+
+        case 'warrior': {
+            const pulseScale = 1 + Math.sin(time * 0.008) * 0.08;
+            ctx.save();
+            ctx.translate(creep.x, creep.y);
+            ctx.rotate(time * 0.002); // Warrior geometric spin
+            ctx.globalCompositeOperation = 'lighter';
+
+            // Layer 1: Heavy Octagon Neon Chassis
+            ctx.shadowColor = '#ff0055';
+            ctx.shadowBlur = 30 * pulseScale;
+            ctx.fillStyle = getNeonGradient(ctx, 0, 0, '#ff0055', '#cc0033', size * 3);
+
+            ctx.beginPath();
+            for (let i = 0; i < 8; i++) {
+                const stepAngle = i * Math.PI / 4;
+                const r = size * pulseScale;
+                ctx.lineTo(r * Math.cos(stepAngle), r * Math.sin(stepAngle));
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Layer 2: Core Sub-Shield Orbit Ring
+            ctx.shadowColor = '#9900ff';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = getNeonGradient(ctx, 0, 0, '#6600cc', '#9900ff', size * pulseScale);
+            ctx.beginPath();
+            ctx.arc(0, 0, size * pulseScale * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
             break;
+        }
+
         case 'ancient':
-            drawAncientGolem(ctx, creep.x, creep.y, angle, time, hpRatio);
+        case 'boss':
+        case 'ancient boss':
+        case 'ancient_boss': {
+            const tFactor = Math.sin(time * 0.003);
+            const pulseScale = 1.4 - (1.0 + (1 - Math.abs(tFactor)) * 0.4);
+            ctx.save();
+            ctx.translate(creep.x, creep.y);
+            ctx.globalCompositeOperation = 'lighter';
+
+            ctx.shadowColor = '#00ffcc';
+            ctx.shadowBlur = 45;
+            const totalSize = size * pulseScale;
+
+            // Concentric multi-layered cosmic stjärnmönster
+            for (let level = 1; level <= 3; level++) {
+                const currentSize = totalSize * (level / 3);
+                ctx.fillStyle = getNeonGradient(ctx, 0, 0, '#00ffcc', '#00aaff', currentSize * 1.5);
+                ctx.globalAlpha = level === 2 ? 0.7 : 1.0;
+
+                ctx.beginPath();
+                for (let i = 0; i < 10; i++) {
+                    const stepAngle = (Math.PI * i) / 5 - (Math.PI / 2);
+                    const length = i % 2 === 0 ? currentSize : currentSize * 0.4;
+                    // Inject minor organic vibration frequency
+                    const x_coord = length * Math.cos(stepAngle) + Math.sin(time * 0.002 + i) * 2;
+                    const y_coord = length * Math.sin(stepAngle) + Math.cos(time * 0.002 + i) * 2;
+
+                    if (i === 0) ctx.moveTo(x_coord, y_coord);
+                    else ctx.lineTo(x_coord, y_coord);
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.restore();
             break;
+        }
+
         default:
-            drawWarriorBeast(ctx, creep.x, creep.y, angle, time, hpRatio);
+            // Safe fallback if type mapping drifts
+            ctx.save();
+            ctx.translate(creep.x, creep.y);
+            ctx.fillStyle = creep.fillColor || '#00ffff';
+            ctx.beginPath();
+            ctx.arc(0, 0, size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            break;
     }
 }
 
@@ -931,24 +1037,21 @@ export function drawWeaponSwingVisuals(ctx, player, camera) {
 }
 
 /**
- * Decorated projectile renderer with ember trails (screen-space).
+ * Decorated projectile renderer with ember trails (world-space).
  */
 export function drawDecoratedProjectile(ctx, proj, camera) {
-    const sX = proj.x - camera.x;
-    const sY = proj.y - camera.y;
-
     ctx.save();
     if (proj.type === 'firebolt') {
         ctx.globalAlpha = 1.0;
 
         ctx.fillStyle = '#FF9800';
         ctx.beginPath();
-        ctx.arc(sX, sY, proj.radius, 0, Math.PI * 2);
+        ctx.arc(proj.x, proj.y, proj.radius, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.fillStyle = '#FFFDE7';
         ctx.beginPath();
-        ctx.arc(sX, sY, proj.radius * 0.4, 0, Math.PI * 2);
+        ctx.arc(proj.x, proj.y, proj.radius * 0.4, 0, Math.PI * 2);
         ctx.fill();
 
         if (Math.random() < 0.3) {
@@ -968,14 +1071,14 @@ export function drawDecoratedProjectile(ctx, proj, camera) {
         ctx.strokeStyle = proj.color || '#81C784';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(sX, sY);
-        ctx.lineTo(sX - Math.cos(projAngle) * 15, sY - Math.sin(projAngle) * 15);
+        ctx.moveTo(proj.x, proj.y);
+        ctx.lineTo(proj.x - Math.cos(projAngle) * 15, proj.y - Math.sin(projAngle) * 15);
         ctx.stroke();
     } else {
         ctx.globalAlpha = 0.9;
         ctx.fillStyle = proj.color ?? '#FF4500';
         ctx.beginPath();
-        ctx.arc(sX, sY, proj.radius ?? 4, 0, Math.PI * 2);
+        ctx.arc(proj.x, proj.y, proj.radius ?? 4, 0, Math.PI * 2);
         ctx.fill();
     }
     ctx.restore();

@@ -225,7 +225,7 @@ export function updateGameLogic(deltaTime) {
         // Only process damage if the physical bounds are explicitly overlapping
         if (distance < (pRadius + cRadius)) {
             // Safe, stable deltaTime scaling
-            _player.takeDamage(creep.contactDamage * deltaTime / 1000);
+            _player.takeDamage(creep.contactDamage * (deltaTime / 16));
         }
     }
 
@@ -258,7 +258,11 @@ function keysRef() { return _keysRef(); }
 
 export function renderGame(deltaTime, time = 0) {
     tickWeaponArcAnimation(deltaTime / 1000);
-    _ctx.clearRect(0, 0, _viewportWidth, _viewportHeight);
+    // --- HIGH-END CYBERPUNK TRAILING BLUR ENGINE ---
+    _ctx.globalAlpha = 0.08; // Retain past frames slightly for glowing movement trails
+    _ctx.fillStyle = '#010315'; // Deep dark cyber background matrix
+    _ctx.fillRect(0, 0, _viewportWidth, _viewportHeight);
+    _ctx.globalAlpha = 1.0; // Reset alpha to full for subsequent game layers
     _ctx.save();
     _ctx.translate(-camera.x, -camera.y);
 
