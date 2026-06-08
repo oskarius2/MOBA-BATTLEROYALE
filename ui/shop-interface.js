@@ -7,15 +7,18 @@ const SHOP_STYLES = `
         position: fixed;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%) scale(0.96);
-        width: min(640px, 94vw);
-        max-height: min(520px, 88vh);
+        transform: translate(-50%, -50%) scale(0.9) translateY(20px);
+        width: min(680px, 94vw);
+        max-height: min(560px, 88vh);
         background: linear-gradient(165deg, rgba(10, 20, 12, 0.97) 0%, rgba(3, 7, 4, 0.98) 100%);
         border: 2px solid rgba(139, 105, 20, 0.55);
+        border-radius: 12px;
         box-shadow:
             0 0 0 1px rgba(201, 162, 39, 0.12),
-            0 8px 48px rgba(0, 0, 0, 0.75),
-            inset 0 0 60px rgba(0, 0, 0, 0.35);
+            0 24px 80px rgba(0, 0, 0, 0.8),
+            0 0 60px rgba(0, 0, 0, 0.4),
+            inset 0 0 60px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
         color: #d4cfc4;
         font-family: 'Montserrat', 'Segoe UI', sans-serif;
         display: flex;
@@ -25,17 +28,20 @@ const SHOP_STYLES = `
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                    visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: 
+            opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+            visibility 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+            transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
         overflow: hidden;
+        backdrop-filter: blur(20px) saturate(1.3);
+        -webkit-backdrop-filter: blur(20px) saturate(1.3);
     }
 
     #shop-overlay.shop-open {
         opacity: 1;
         visibility: visible;
         pointer-events: auto;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translate(-50%, -50%) scale(1) translateY(0);
     }
 
     #shop-scrim {
@@ -124,16 +130,52 @@ const SHOP_STYLES = `
     .shop-card {
         position: relative;
         border: 1px solid rgba(139, 105, 20, 0.35);
-        padding: 16px 14px;
-        background: linear-gradient(160deg, rgba(12, 22, 14, 0.9), rgba(5, 12, 7, 0.85));
+        border-radius: 8px;
+        padding: 18px 14px;
+        background: linear-gradient(160deg, rgba(12, 22, 14, 0.92), rgba(5, 12, 7, 0.88));
         text-align: center;
-        transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+        transition: 
+            border-color 0.25s ease,
+            box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1),
+            background 0.25s ease;
+        overflow: hidden;
+    }
+
+    .shop-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            135deg,
+            transparent 0%,
+            transparent 40%,
+            rgba(255, 255, 255, 0.04) 50%,
+            transparent 60%,
+            transparent 100%
+        );
+        transform: translateX(-100%);
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: none;
+    }
+
+    .shop-card:hover::before {
+        transform: translateX(100%);
     }
 
     .shop-card:hover {
-        border-color: rgba(201, 162, 39, 0.6);
-        box-shadow: 0 0 20px rgba(201, 162, 39, 0.15);
-        transform: translateY(-2px);
+        border-color: rgba(201, 162, 39, 0.65);
+        box-shadow: 
+            0 0 24px rgba(201, 162, 39, 0.2),
+            0 12px 32px rgba(0, 0, 0, 0.35),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        transform: translateY(-4px) scale(1.01);
+        background: linear-gradient(160deg, rgba(16, 28, 18, 0.95), rgba(8, 16, 10, 0.9));
+    }
+
+    .shop-card:active {
+        transform: translateY(-1px) scale(0.99);
+        transition: transform 0.1s ease;
     }
 
     .shop-card h4 {
@@ -156,51 +198,121 @@ const SHOP_STYLES = `
 
     .shop-buy-btn {
         width: 100%;
-        padding: 10px 12px;
+        padding: 11px 14px;
         font-family: 'Montserrat', sans-serif;
         font-size: 11px;
         font-weight: 600;
         letter-spacing: 0.15em;
         text-transform: uppercase;
-        background: linear-gradient(180deg, #8b6914, #6b5010);
+        background: linear-gradient(180deg, #8b6914 0%, #6b5010 50%, #5a4310 100%);
         border: 1px solid #c9a227;
+        border-radius: 4px;
         color: #f0e6c8;
         cursor: pointer;
-        transition: background 0.2s, box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+        transition: 
+            background 0.25s ease,
+            box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+            transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1),
+            border-color 0.2s ease;
+    }
+
+    .shop-buy-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            105deg,
+            transparent 0%,
+            transparent 40%,
+            rgba(255, 255, 255, 0.15) 50%,
+            transparent 60%,
+            transparent 100%
+        );
+        transform: translateX(-100%);
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .shop-buy-btn:hover::before {
+        transform: translateX(100%);
     }
 
     .shop-buy-btn:hover {
-        background: linear-gradient(180deg, #a07a18, #8b6914);
-        box-shadow: 0 0 16px rgba(201, 162, 39, 0.35);
+        background: linear-gradient(180deg, #a07a18 0%, #8b6914 50%, #7a5a12 100%);
+        box-shadow: 
+            0 0 20px rgba(201, 162, 39, 0.4),
+            0 4px 16px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+        border-color: #e8d48a;
+    }
+
+    .shop-buy-btn:active {
+        transform: translateY(0) scale(0.97);
+        transition: transform 0.1s ease;
+        box-shadow: 0 0 10px rgba(201, 162, 39, 0.3);
+    }
+
+    .shop-buy-btn:focus-visible {
+        outline: 2px solid #c9a227;
+        outline-offset: 2px;
     }
 
     .shop-tooltip {
         position: absolute;
-        bottom: calc(100% + 8px);
+        bottom: calc(100% + 12px);
         left: 50%;
-        transform: translateX(-50%) translateY(4px);
+        transform: translateX(-50%) translateY(8px) scale(0.95);
         width: max-content;
-        max-width: 220px;
-        padding: 10px 12px;
-        background: rgba(3, 7, 4, 0.97);
-        border: 1px solid rgba(139, 105, 20, 0.5);
+        max-width: 240px;
+        padding: 12px 14px;
+        background: linear-gradient(
+            165deg,
+            rgba(8, 16, 10, 0.98) 0%,
+            rgba(3, 7, 4, 0.99) 100%
+        );
+        border: 1px solid rgba(201, 162, 39, 0.45);
+        border-radius: 6px;
         font-size: 11px;
-        line-height: 1.5;
-        color: #a8b0a0;
+        line-height: 1.55;
+        color: #c8d0c0;
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
-        transition: opacity 0.2s, transform 0.2s, visibility 0.2s;
+        transition: 
+            opacity 0.2s ease,
+            transform 0.25s cubic-bezier(0.34, 1.4, 0.64, 1),
+            visibility 0.2s;
         z-index: 10;
         text-align: left;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        box-shadow: 
+            0 8px 32px rgba(0, 0, 0, 0.65),
+            0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+        backdrop-filter: blur(12px) saturate(1.3);
+        -webkit-backdrop-filter: blur(12px) saturate(1.3);
+    }
+
+    .shop-tooltip::before {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        left: 50%;
+        margin-left: -6px;
+        width: 12px;
+        height: 12px;
+        background: inherit;
+        border: 1px solid rgba(201, 162, 39, 0.45);
+        border-top: none;
+        border-left: none;
+        transform: rotate(45deg);
     }
 
     .shop-card:hover .shop-tooltip,
     .shop-card:focus-within .shop-tooltip {
         opacity: 1;
         visibility: visible;
-        transform: translateX(-50%) translateY(0);
+        transform: translateX(-50%) translateY(0) scale(1);
     }
 
     #map-presence-alert {

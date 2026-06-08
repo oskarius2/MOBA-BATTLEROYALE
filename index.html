@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="ui/hud-tokens.css">
+    <link rel="stylesheet" href="ui/premium-animations.css">
     <style>
         html, body {
             margin: 0;
@@ -265,6 +266,10 @@ import {
     initHeroSelectMenu, showClassSelectMenu, selectHero, buildWelcomeLetters,
     registerGamePauseHandler, openInGameSettings, closeInGameSettings, isInGameSettingsOpen,
 } from './ui/menu-interface.js';
+import {
+    showNotification, showLevelUpNotification, showItemPickup,
+    showCreepKill, initPremiumButtons,
+} from './ui/notifications.js';
 import AbilityEngine, { CooldownState } from './core/ability-engine.js';
 import { SHOP_CATALOG }    from './data/shop-catalog.js';
 import { HERO_ROSTER }     from './data/hero-roster.js';
@@ -286,7 +291,10 @@ const PlayerInstance = new Player(3000, 3000);
 // Callbacks injicerade utan cirkulära imports
 PlayerInstance.getPointer = () => pointerWorld;
 PlayerInstance.onDeath    = () => showGameOver();
-PlayerInstance.onLevelUp  = () => showLevelUpFlash();
+PlayerInstance.onLevelUp  = (level) => {
+    showLevelUpFlash();
+    showLevelUpNotification(level ?? PlayerInstance.level);
+};
 
 // ─── KOPPLA IHOP MODULERNA ────────────────────────────────────
 setGameInitRefs({
@@ -358,9 +366,16 @@ window.onload = async () => {
     initHeroSelectMenu(HERO_ROSTER, (heroKey) => {
         applyHeroConfig(heroKey);
         initializeGame();
+        setTimeout(initPremiumButtons, 100);
     });
     showClassSelectMenu({ skipWelcome: false });
+    setTimeout(initPremiumButtons, 200);
 };
+
+// Expose notification helpers for game events
+window.showNotification = showNotification;
+window.showCreepKill = showCreepKill;
+window.showItemPickup = showItemPickup;
 </script>
 
 </body>
