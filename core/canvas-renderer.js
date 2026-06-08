@@ -1102,15 +1102,18 @@ export function drawDecoratedProjectile(ctx, proj, camera) {
         ctx.fill();
 
         if (Math.random() < 0.3) {
-            GlobalParticles.addParticle(
-                proj.x - proj.vx,
-                proj.y - proj.vy,
-                (Math.random() - 0.5) * 1.5,
-                (Math.random() - 0.5) * 1.5,
-                Math.random() * 2 + 1,
-                0.2,
-                '#FF5722'
-            );
+            // Inject secure guard check to prevent circular dependency runtime crashes
+            if (GlobalParticles?.addParticle) {
+                GlobalParticles.addParticle(
+                    proj.x - proj.vx,
+                    proj.y - proj.vy,
+                    (Math.random() - 0.5) * 1.5,
+                    (Math.random() - 0.5) * 1.5,
+                    Math.random() * 2 + 1,
+                    0.2,
+                    '#FF5722'
+                );
+            }
         }
     } else if (proj.type === 'arrow') {
         const projAngle = Math.atan2(proj.vy, proj.vx);

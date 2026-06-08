@@ -258,12 +258,17 @@ function keysRef() { return _keysRef(); }
 
 export function renderGame(deltaTime, time = 0) {
     tickWeaponArcAnimation(deltaTime / 1000);
-    // --- HIGH-END CYBERPUNK TRAILING BLUR ENGINE ---
+    
+    // 1. SAVE FIRST - Capture the clean, baseline canvas state
+    _ctx.save();
+    
+    // 2. APPLY TRAILING BLUR ENGINE (Inside the safe saved context)
     _ctx.globalAlpha = 0.08; // Retain past frames slightly for glowing movement trails
     _ctx.fillStyle = '#010315'; // Deep dark cyber background matrix
     _ctx.fillRect(0, 0, _viewportWidth, _viewportHeight);
     _ctx.globalAlpha = 1.0; // Reset alpha to full for subsequent game layers
-    _ctx.save();
+    
+    // 3. APPLY CAMERA TRANSLATION
     _ctx.translate(-camera.x, -camera.y);
 
     drawForestBackground(_ctx, camera, _viewportWidth, _viewportHeight);
