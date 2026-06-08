@@ -15,9 +15,9 @@ const MENU_STYLES = `
         --df-text: #e8e4dc;
         --df-text-dim: #8a9a82;
         --df-border: rgba(139, 105, 20, 0.4);
-        --glass-bg: rgba(12, 24, 16, 0.45);
-        --glass-border: rgba(201, 162, 39, 0.22);
-        --glass-highlight: rgba(255, 255, 255, 0.07);
+        --glass-bg: rgba(10, 20, 12, 0.38);
+        --glass-border: rgba(201, 162, 39, 0.32);
+        --glass-highlight: rgba(255, 255, 255, 0.1);
         --menu-ease: cubic-bezier(0.4, 0, 0.2, 1);
         --menu-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
     }
@@ -29,9 +29,9 @@ const MENU_STYLES = `
         display: flex;
         align-items: center;
         justify-content: center;
-        background: linear-gradient(165deg, rgba(5, 15, 8, 0.58) 0%, rgba(3, 7, 4, 0.72) 55%, rgba(1, 3, 2, 0.82) 100%);
-        backdrop-filter: blur(18px) saturate(1.25);
-        -webkit-backdrop-filter: blur(18px) saturate(1.25);
+        background: linear-gradient(165deg, rgba(5, 15, 8, 0.42) 0%, rgba(3, 7, 4, 0.55) 55%, rgba(1, 3, 2, 0.68) 100%);
+        backdrop-filter: blur(26px) saturate(1.45);
+        -webkit-backdrop-filter: blur(26px) saturate(1.45);
         pointer-events: auto;
         opacity: 1;
         visibility: visible;
@@ -244,16 +244,21 @@ const MENU_STYLES = `
     }
 
     .glass-btn-go {
-        min-width: 200px;
+        min-width: 220px;
         background: linear-gradient(135deg, rgba(232, 114, 26, 0.35), rgba(201, 162, 39, 0.2));
         border-color: rgba(232, 114, 26, 0.55);
-        opacity: 0.35;
+        opacity: 0.4;
+    }
+
+    .glass-btn-go:disabled {
         pointer-events: none;
+        cursor: not-allowed;
+        filter: grayscale(0.35);
     }
 
     .glass-btn-go.ready {
         opacity: 1;
-        pointer-events: auto;
+        filter: none;
         animation: goPulse 2s ease-in-out infinite;
     }
 
@@ -422,40 +427,69 @@ const MENU_STYLES = `
         color: var(--df-text-dim);
     }
 
-    .menu-body {
-        display: grid;
-        grid-template-columns: 1fr min(320px, 30vw);
-        gap: clamp(14px, 2vw, 24px);
+    #menu-stage-class-select.active {
         width: 100%;
-        min-height: 0;
+        align-items: stretch;
     }
 
-    @media (max-width: 860px) {
+    .menu-body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) min(340px, 34vw);
+        gap: clamp(16px, 2.5vw, 28px);
+        width: 100%;
+        min-height: 0;
+        align-items: stretch;
+    }
+
+    @media (max-width: 900px) {
         .menu-body { grid-template-columns: 1fr; }
     }
 
     .hero-card-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 12px;
-        max-height: min(48vh, 440px);
-        overflow-y: auto;
-        padding-right: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-content: flex-start;
+        gap: 14px;
+        padding: 4px 2px;
+    }
+
+    .hero-card-grid .hero-card {
+        flex: 0 1 calc(20% - 12px);
+        min-width: 148px;
+        max-width: 188px;
+    }
+
+    @media (max-width: 960px) {
+        .hero-card-grid .hero-card {
+            flex: 0 1 calc(33.333% - 12px);
+            max-width: none;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .hero-card-grid .hero-card {
+            flex: 0 1 calc(50% - 10px);
+            min-width: 130px;
+        }
     }
 
     .hero-card {
         position: relative;
         border: 1px solid var(--glass-border);
+        border-radius: 8px;
         background: var(--glass-bg);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        padding: 14px 12px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        padding: 16px 14px;
+        min-height: 108px;
         cursor: pointer;
         text-align: left;
         font-family: inherit;
         color: inherit;
         transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s var(--menu-spring);
         overflow: hidden;
+        box-shadow: inset 0 1px 0 var(--glass-highlight);
     }
 
     .hero-card::before {
@@ -519,7 +553,9 @@ const MENU_STYLES = `
         padding: 20px 18px;
         display: flex;
         flex-direction: column;
-        min-height: 260px;
+        min-height: 280px;
+        max-height: min(56vh, 500px);
+        overflow-y: auto;
         box-shadow: inset 0 1px 0 var(--glass-highlight), 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
@@ -567,11 +603,36 @@ const MENU_STYLES = `
 
     .class-stage-footer {
         display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 16px;
-        margin-top: 24px;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(139, 105, 20, 0.18);
+        width: 100%;
         flex-wrap: wrap;
+    }
+
+    .class-deploy-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .class-deploy-hint {
+        margin: 0;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--df-text-dim);
+        text-align: center;
+    }
+
+    .class-deploy-hint.ready {
+        color: var(--df-copper-light);
     }
 
     /* ── Settings ── */
@@ -716,17 +777,34 @@ function setStage(stage) {
 }
 
 function updateBreadcrumb() {
-    const play = document.querySelector('.menu-breadcrumb [data-step="play"]');
     const pick = document.querySelector('.menu-breadcrumb [data-step="class"]');
     const go = document.querySelector('.menu-breadcrumb [data-step="go"]');
-    [play, pick, go].forEach(c => c?.classList.remove('active', 'done'));
-    play?.classList.add('done');
+    [pick, go].forEach(c => c?.classList.remove('active', 'done'));
     if (selectedHeroKey) {
         pick?.classList.add('done');
         go?.classList.add('active');
     } else {
         pick?.classList.add('active');
     }
+}
+
+function setDeployReady(ready) {
+    const btn = document.getElementById('enter-forest-btn');
+    const hint = document.getElementById('class-deploy-hint');
+    btn?.classList.toggle('ready', ready);
+    if (btn) btn.disabled = !ready;
+    hint?.classList.toggle('ready', ready);
+    if (hint && ready) {
+        hint.textContent = 'Ready — Deploy or double-click champion';
+    } else if (hint) {
+        hint.textContent = 'Choose your champion — double-click or press Deploy';
+    }
+}
+
+function deploySelectedHero() {
+    if (!selectedHeroKey) return;
+    hideClassSelectOverlay();
+    onEnterCallback?.(selectedHeroKey);
 }
 
 function renderDifficultyStars(count) {
@@ -776,6 +854,11 @@ export function selectHero(heroKey, heroRoster) {
     const hero = heroRoster[heroKey];
     if (!hero) return;
 
+    if (selectedHeroKey === heroKey) {
+        deploySelectedHero();
+        return;
+    }
+
     selectedHeroKey = heroKey;
 
     document.getElementById('hero-card-grid')?.querySelectorAll('.hero-card').forEach(card => {
@@ -784,7 +867,7 @@ export function selectHero(heroKey, heroRoster) {
     });
 
     populateHeroDetailsPane(heroKey, hero);
-    document.getElementById('enter-forest-btn')?.classList.add('ready');
+    setDeployReady(true);
     updateBreadcrumb();
 }
 
@@ -793,17 +876,20 @@ export function hideClassSelectOverlay() {
     getOverlay()?.classList.add('hidden');
 }
 
-export function showMainMenu(skipWelcome = true) {
+function resetClassSelectionUI() {
     selectedHeroKey = null;
-    getOverlay()?.classList.remove('hidden');
-    document.getElementById('enter-forest-btn')?.classList.remove('ready');
+    setDeployReady(false);
     document.getElementById('hero-card-grid')?.querySelectorAll('.hero-card').forEach(c => {
         c.classList.remove('selected');
         c.setAttribute('aria-selected', 'false');
     });
-
     const pane = document.getElementById('hero-details-pane');
     if (pane) pane.innerHTML = '<div class="details-empty">Select a champion<br>to begin</div>';
+}
+
+export function showMainMenu(skipWelcome = true) {
+    resetClassSelectionUI();
+    getOverlay()?.classList.remove('hidden');
 
     if (!skipWelcome && !welcomePlayed) {
         setStage('welcome');
@@ -813,7 +899,15 @@ export function showMainMenu(skipWelcome = true) {
 }
 
 export function showClassSelectMenu(options = {}) {
-    showMainMenu(options.skipWelcome !== false);
+    resetClassSelectionUI();
+    getOverlay()?.classList.remove('hidden');
+
+    if (!options.skipWelcome && !welcomePlayed) {
+        setStage('welcome');
+    } else {
+        setStage('class-select');
+        updateBreadcrumb();
+    }
 }
 
 function goToClassSelect() {
@@ -829,7 +923,8 @@ function bindWelcomeStage() {
         if (welcomePlayed) return;
         welcomePlayed = true;
         if (welcomeTimer) clearTimeout(welcomeTimer);
-        setStage('main');
+        setStage('class-select');
+        updateBreadcrumb();
     };
 
     continueBtn?.addEventListener('click', dismissWelcome);
@@ -919,11 +1014,7 @@ export function initHeroSelectMenu(heroRoster, onEnter) {
         grid.appendChild(card);
     }
 
-    enterBtn.addEventListener('click', () => {
-        if (!selectedHeroKey) return;
-        hideClassSelectOverlay();
-        onEnterCallback?.(selectedHeroKey);
-    });
+    enterBtn.addEventListener('click', () => deploySelectedHero());
 
     bindWelcomeStage();
     bindMainStage();

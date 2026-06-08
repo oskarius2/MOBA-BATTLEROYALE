@@ -21,6 +21,36 @@ const BUFF_SVGS = {
     blight: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg>',
 };
 
+const SVG_STROKE = 'fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"';
+
+const SKILL_VISUALS = {
+    'Dash Strike':   { role: 'DASH',  accent: '#e8721a', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M5 12h12M14 8l4 4-4 4"/><circle cx="6" cy="12" r="2"/></svg>` },
+    'Blade Whirl':   { role: 'SPIN',  accent: '#c0392b', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M12 4a8 8 0 108 8"/><path ${SVG_STROKE} d="M12 8v4l3 2"/></svg>` },
+    'Bladestorm':    { role: 'ULT',   accent: '#ff6b35', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M5.6 18.4l2.8-2.8M15.6 8.4l2.8-2.8"/></svg>` },
+    'Volley':        { role: 'BURST', accent: '#3dba6a', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M4 18l6-10 2 4 6-8"/><path ${SVG_STROKE} d="M14 14l3 3"/></svg>` },
+    'Tumble':        { role: 'DODGE', accent: '#6a9a5a', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M4 14c4-6 8-8 12-8"/><path ${SVG_STROKE} d="M14 6l4 2-2 4"/></svg>` },
+    'Arrow Rain':    { role: 'ULT',   accent: '#8fbc8f', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M6 6h12v4H6z"/><path ${SVG_STROKE} d="M8 14l2 6M12 12l2 8M16 14l2 6"/></svg>` },
+    'Ground Slam':   { role: 'SLAM',  accent: '#4a9fd4', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M12 4v8"/><path ${SVG_STROKE} d="M6 18h12"/><path ${SVG_STROKE} d="M8 14l4 4 4-4"/></svg>` },
+    'Iron Shield':   { role: 'DEF',   accent: '#7a8a9a', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M12 3L5 7v5c0 4 3 7.5 7 9 4-1.5 7-5 7-9V7l-7-4z"/></svg>` },
+    "Valhalla's Call":{ role: 'BUFF', accent: '#d4b84a', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M8 16V8l4-3 4 3v8"/><path ${SVG_STROKE} d="M6 10h12"/></svg>` },
+    'Stance Swap':   { role: 'SWAP',  accent: '#9b59b6', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M7 7h10M17 7l-3-3M17 7l-3 3"/><path ${SVG_STROKE} d="M17 17H7M7 17l3 3M7 17l3-3"/></svg>` },
+    'Shadow Dash':   { role: 'DASH',  accent: '#6a4a8a', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M4 14h10"/><path ${SVG_STROKE} d="M12 10l5 4-5 4"/><path ${SVG_STROKE} d="M6 18l2-6" opacity="0.5"/></svg>` },
+    'Equilibrium':   { role: 'ULT',   accent: '#b39ddb', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M12 3v18"/><path ${SVG_STROKE} d="M6 9h12"/><path ${SVG_STROKE} d="M8 15h8"/></svg>` },
+    'Fireball':      { role: 'BLAST', accent: '#e74c3c', svg: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" ${SVG_STROKE}/><path ${SVG_STROKE} d="M12 7c1-3 4-4 4-1s-2 3-1 5"/></svg>` },
+    'Flame Dash':    { role: 'DASH',  accent: '#ff7043', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M5 13h9"/><path ${SVG_STROKE} d="M12 9l5 4-5 4"/><path ${SVG_STROKE} d="M7 16c0-4 2-7 3-9"/></svg>` },
+    'Meteor Strike': { role: 'ULT',   accent: '#ffb74d', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M14 4l2 4 4 1-3 3 1 4-4-2-3 3-4-1 1-4z"/><path ${SVG_STROKE} d="M4 20h16"/></svg>` },
+    'Attack':        { role: 'AUTO',  accent: '#c9a227', svg: `<svg viewBox="0 0 24 24"><path ${SVG_STROKE} d="M4 4l7 16 2-7 7-2z"/></svg>` },
+};
+
+const ROLE_FALLBACK = {
+    dash:   { role: 'DASH',  accent: '#e8721a', svg: SKILL_VISUALS['Dash Strike'].svg },
+    spin:   { role: 'SPIN',  accent: '#c0392b', svg: SKILL_VISUALS['Blade Whirl'].svg },
+    shield: { role: 'DEF',   accent: '#7a8a9a', svg: SKILL_VISUALS['Iron Shield'].svg },
+    ranged: { role: 'BURST', accent: '#3dba6a', svg: SKILL_VISUALS.Volley.svg },
+    magic:  { role: 'BLAST', accent: '#e74c3c', svg: SKILL_VISUALS.Fireball.svg },
+    ult:    { role: 'ULT',   accent: '#d4b84a', svg: SKILL_VISUALS.Bladestorm.svg },
+};
+
 const hudCache = {
     level: -1, gold: -1, xp: -1, hp: -1, maxHp: -1,
     aliveCreeps: -1, activeCamps: -1,
@@ -175,15 +205,17 @@ function getAttackCooldownMax(player, cfg) {
     return (cfg.ATTACK_SPEED ?? 500) / 1000;
 }
 
-function skillIconLabel(name, isBasic) {
-    if (isBasic) return '⚔';
-    const word = name.split(' ')[0] ?? name;
-    return word.length > 7 ? `${word.slice(0, 6)}…` : word;
-}
-
-function skillShortLabel(name, isBasic) {
-    if (isBasic) return 'Attack';
-    return name;
+function resolveSkillVisual(name, isBasic, isUlt) {
+    if (isBasic) return SKILL_VISUALS.Attack;
+    if (SKILL_VISUALS[name]) return SKILL_VISUALS[name];
+    const lower = name.toLowerCase();
+    if (lower.includes('shield') || lower.includes('iron')) return ROLE_FALLBACK.shield;
+    if (lower.includes('dash') || lower.includes('strike') || lower.includes('tumble')) return ROLE_FALLBACK.dash;
+    if (lower.includes('whirl') || lower.includes('spin') || lower.includes('storm')) return ROLE_FALLBACK.spin;
+    if (lower.includes('arrow') || lower.includes('volley') || lower.includes('rain')) return ROLE_FALLBACK.ranged;
+    if (lower.includes('fire') || lower.includes('flame') || lower.includes('meteor')) return ROLE_FALLBACK.magic;
+    if (isUlt) return ROLE_FALLBACK.ult;
+    return ROLE_FALLBACK.magic;
 }
 
 export function flashAbilitySlot(slotId) {
@@ -213,11 +245,17 @@ function updateAbilitySlot(slotId, remaining, maxCd, name, key, isUlt = false, i
     const timer = el.querySelector('.ability-timer');
     if (timer) timer.textContent = onCd ? remaining.toFixed(1) : '';
 
-    const nameEl = el.querySelector('.ability-name');
-    if (nameEl) nameEl.textContent = skillShortLabel(name, isBasic);
+    const visual = resolveSkillVisual(name, isBasic, isUlt);
+    el.style.setProperty('--skill-accent', visual.accent);
 
-    const iconEl = el.querySelector('.ability-icon');
-    if (iconEl) iconEl.textContent = skillIconLabel(name, isBasic);
+    const roleEl = el.querySelector('.ability-role');
+    if (roleEl) roleEl.textContent = isUlt ? 'ULT' : visual.role;
+
+    const glyphEl = el.querySelector('.ability-glyph');
+    if (glyphEl) glyphEl.innerHTML = visual.svg;
+
+    const nameEl = el.querySelector('.ability-name');
+    if (nameEl) nameEl.textContent = isBasic ? 'Attack' : name;
 
     const keyEl = el.querySelector('.ability-key');
     if (keyEl) keyEl.textContent = key;

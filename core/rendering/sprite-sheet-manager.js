@@ -200,7 +200,7 @@ export class SpriteSheetManager {
                 case 'attack':     return rangedBase + 1;
                 case 'transition': return rangedBase + 2;
                 case 'idle':
-                default:           return 0;
+                default:           return rangedBase;
             }
         }
         switch (action) {

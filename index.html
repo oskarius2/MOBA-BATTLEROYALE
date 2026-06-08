@@ -93,31 +93,35 @@
                 <div id="hud-abilities-row">
                     <div class="ability-slot" data-slot="q" aria-label="Skill 1, ready">
                         <span class="ability-key">1</span>
-                        <div class="ability-icon-wrap"><span class="ability-icon">—</span></div>
+                        <span class="ability-role">SKILL</span>
+                        <div class="ability-glyph" aria-hidden="true"></div>
+                        <span class="ability-name">Skill 1</span>
                         <div class="ability-cd-ring" aria-hidden="true"></div>
                         <span class="ability-timer" aria-hidden="true"></span>
-                        <span class="ability-name">Skill 1</span>
                     </div>
                     <div class="ability-slot" data-slot="w" aria-label="Skill 2, ready">
                         <span class="ability-key">2</span>
-                        <div class="ability-icon-wrap"><span class="ability-icon">—</span></div>
+                        <span class="ability-role">SKILL</span>
+                        <div class="ability-glyph" aria-hidden="true"></div>
+                        <span class="ability-name">Skill 2</span>
                         <div class="ability-cd-ring" aria-hidden="true"></div>
                         <span class="ability-timer" aria-hidden="true"></span>
-                        <span class="ability-name">Skill 2</span>
                     </div>
                     <div class="ability-slot ult" data-slot="e" aria-label="Ultimate, ready">
                         <span class="ability-key">3</span>
-                        <div class="ability-icon-wrap"><span class="ability-icon">—</span></div>
+                        <span class="ability-role">ULT</span>
+                        <div class="ability-glyph" aria-hidden="true"></div>
+                        <span class="ability-name">Ultimate</span>
                         <div class="ability-cd-ring" aria-hidden="true"></div>
                         <span class="ability-timer" aria-hidden="true"></span>
-                        <span class="ability-name">Ultimate</span>
                     </div>
                     <div class="ability-slot basic" data-slot="aa" aria-label="Attack, ready">
                         <span class="ability-key">LMB</span>
-                        <div class="ability-icon-wrap"><span class="ability-icon">⚔</span></div>
+                        <span class="ability-role">AUTO</span>
+                        <div class="ability-glyph" aria-hidden="true"></div>
+                        <span class="ability-name">Attack</span>
                         <div class="ability-cd-ring" aria-hidden="true"></div>
                         <span class="ability-timer" aria-hidden="true"></span>
-                        <span class="ability-name">Attack</span>
                     </div>
                 </div>
 
@@ -146,11 +150,9 @@
 
         <div class="menu-shell">
             <nav class="menu-breadcrumb hidden" id="menu-breadcrumb" aria-label="Menu progress">
-                <span class="crumb done" data-step="play">Play</span>
+                <span class="crumb active" data-step="class">Champion</span>
                 <span class="crumb-sep" aria-hidden="true">→</span>
-                <span class="crumb active" data-step="class">Pick Class</span>
-                <span class="crumb-sep" aria-hidden="true">→</span>
-                <span class="crumb" data-step="go">GO</span>
+                <span class="crumb" data-step="go">Deploy</span>
             </nav>
 
             <!-- Welcome -->
@@ -171,8 +173,8 @@
                 <h1 class="main-logo">MobRoyale</h1>
                 <p class="main-subtitle">Battle Royale in the Dark Jungle</p>
                 <div class="main-menu-buttons">
-                    <button type="button" class="glass-btn glass-btn-primary" id="btn-play">Play</button>
-                    <button type="button" class="glass-btn" id="btn-classes">Classes</button>
+                    <button type="button" class="glass-btn glass-btn-primary" id="btn-play">Quick Play</button>
+                    <button type="button" class="glass-btn" id="btn-classes">Champion Roster</button>
                     <button type="button" class="glass-btn" id="btn-settings">Settings</button>
                 </div>
             </section>
@@ -190,8 +192,11 @@
                     </aside>
                 </div>
                 <footer class="class-stage-footer">
-                    <button type="button" class="glass-btn glass-btn-back" id="btn-class-back">← Back</button>
-                    <button type="button" class="glass-btn glass-btn-go" id="enter-forest-btn">GO</button>
+                    <button type="button" class="glass-btn glass-btn-back" id="btn-class-back">← Menu</button>
+                    <div class="class-deploy-group">
+                        <p class="class-deploy-hint" id="class-deploy-hint">Choose your champion — double-click or press Deploy</p>
+                        <button type="button" class="glass-btn glass-btn-go" id="enter-forest-btn" disabled>Deploy</button>
+                    </div>
                 </footer>
             </section>
 
