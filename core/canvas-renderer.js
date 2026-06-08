@@ -226,14 +226,12 @@ export function drawFogOfWar(ctx, playerX, playerY, camera, viewW, viewH) {
     const screenX = playerX - camera.x;
     const screenY = playerY - camera.y;
     const { canvas: tpl, tplW, tplH } = fogTemplateCache;
-    const srcW = Math.min(viewW, tplW);
-    const srcH = Math.min(viewH, tplH);
-    let srcX = tplW / 2 - screenX;
-    let srcY = tplH / 2 - screenY;
-    srcX = Math.max(0, Math.min(tplW - srcW, srcX));
-    srcY = Math.max(0, Math.min(tplH - srcH, srcY));
 
-    ctx.drawImage(tpl, srcX, srcY, srcW, srcH, 0, 0, viewW, viewH);
+    ctx.save();
+    const destX = screenX - tplW / 2;
+    const destY = screenY - tplH / 2;
+    ctx.drawImage(tpl, destX, destY);
+    ctx.restore();
 }
 
 function withOrientation(ctx, x, y, angle, drawFn) {
@@ -754,36 +752,56 @@ function adjustColor(hex, amount) {
     return `rgb(${r},${g},${b})`;
 }
 
-export function drawMagicProjectile(ctx, x, y, vx, vy, time = 0) {
-    const speed = Math.hypot(vx, vy);
-    const angle = Math.atan2(vy, vx);
-    const pulse = 0.5 + 0.5 * Math.sin(time * 0.02);
+const BOT_CLASS_COLORS = {
+    Warrior:      '#d4691f',
+    'Tank-Viking':'#8b4513',
+    Mage:         '#6666ff',
+    Ranger:       '#66ff66',
+    Hybrid:       '#ff66ff',
+};
 
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
+/**
+ * Passive observer draw for AI bots — world-space coords (camera translate active).
+ */
+export function drawBotModel(ctx, bot) {
+    if (!bot?.isAlive) return;
 
-    drawGlowRing(ctx, 0, 0, 5, '#ffcc44', 1, 4);
-    ctx.beginPath();
-    ctx.arc(0, 0, 5, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255, 200, 60, ${0.85 + pulse * 0.15})`;
-    ctx.fill();
-
-    const tailLen = 8 + speed * 0.5;
-    ctx.beginPath();
-    ctx.moveTo(-3, -3);
-    ctx.lineTo(-tailLen, 0);
-    ctx.lineTo(-3, 3);
-    ctx.closePath();
-    ctx.fillStyle = `rgba(255, 160, 40, ${0.5 + pulse * 0.3})`;
-    ctx.fill();
+    const { x, y, radius, facingAngle, heroClass, hp, maxHp } = bot;
+    const fillColor = BOT_CLASS_COLORS[heroClass] ?? '#999999';
 
     ctx.beginPath();
-    ctx.arc(0, 0, 2, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff8cc';
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = fillColor;
     ctx.fill();
+    ctx.strokeStyle = 'rgba(240, 230, 200, 0.9)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-    ctx.restore();
+    const arrowLen = radius * 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(
+        x + Math.cos(facingAngle) * arrowLen,
+        y + Math.sin(facingAngle) * arrowLen
+    );
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const hpRatio = maxHp > 0 ? hp / maxHp : 0;
+    drawHpBar(ctx, x, y - radius - 10, radius * 2, 4, hpRatio, '#ff6644');
+}
+
+/**
+ * Legacy arcane projectile entry — delegates to the shared decorated renderer.
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {object} proj — projectile state (world coords)
+ * @param {object} camera
+ * @param {number} [time=0] — retained for API compatibility
+ */
+export function drawMagicProjectile(ctx, proj, camera, time = 0) {
+    void time;
+    drawDecoratedProjectile(ctx, { type: 'firebolt', ...proj }, camera);
 }
 
 export function drawBlightZone(ctx, cx, cy, radius, time = 0) {
@@ -913,33 +931,34 @@ export function drawWeaponSwingVisuals(ctx, player, camera) {
 }
 
 /**
- * Decorated projectile renderer with ember trails (world-space).
+ * Decorated projectile renderer with ember trails (screen-space).
  */
-export function drawDecoratedProjectile(ctx, proj) {
-    const sX = proj.x;
-    const sY = proj.y;
+export function drawDecoratedProjectile(ctx, proj, camera) {
+    const sX = proj.x - camera.x;
+    const sY = proj.y - camera.y;
 
     ctx.save();
     if (proj.type === 'firebolt') {
         ctx.globalAlpha = 1.0;
-        const gradient = ctx.createRadialGradient(sX, sY, 2, sX, sY, proj.radius * 2);
-        gradient.addColorStop(0, '#FFFDE7');
-        gradient.addColorStop(0.3, '#FF9800');
-        gradient.addColorStop(1, 'rgba(255, 69, 0, 0)');
 
-        ctx.fillStyle = gradient;
+        ctx.fillStyle = '#FF9800';
         ctx.beginPath();
-        ctx.arc(sX, sY, proj.radius * 2, 0, Math.PI * 2);
+        ctx.arc(sX, sY, proj.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        if (Math.random() < 0.4) {
+        ctx.fillStyle = '#FFFDE7';
+        ctx.beginPath();
+        ctx.arc(sX, sY, proj.radius * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (Math.random() < 0.3) {
             GlobalParticles.addParticle(
-                proj.x - proj.vx * 2,
-                proj.y - proj.vy * 2,
-                (Math.random() - 0.5) * 2,
-                (Math.random() - 0.5) * 2,
-                Math.random() * 3 + 1,
-                0.25,
+                proj.x - proj.vx,
+                proj.y - proj.vy,
+                (Math.random() - 0.5) * 1.5,
+                (Math.random() - 0.5) * 1.5,
+                Math.random() * 2 + 1,
+                0.2,
                 '#FF5722'
             );
         }
@@ -947,12 +966,10 @@ export function drawDecoratedProjectile(ctx, proj) {
         const projAngle = Math.atan2(proj.vy, proj.vx);
         ctx.globalAlpha = 0.85;
         ctx.strokeStyle = proj.color || '#81C784';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(sX, sY);
-        ctx.lineTo(sX - Math.cos(projAngle) * 20, sY - Math.sin(projAngle) * 20);
+        ctx.lineTo(sX - Math.cos(projAngle) * 15, sY - Math.sin(projAngle) * 15);
         ctx.stroke();
     } else {
         ctx.globalAlpha = 0.9;

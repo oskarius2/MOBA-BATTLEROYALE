@@ -26,6 +26,7 @@ import {
     gameState, resetArrays, Creeps,
     setGameLoopRefs, setPlayerClass, gameLoop,
 } from './game-loop.js';
+import { initializeBots, resetBots } from './bot-manager.js';
 import { CooldownState } from './ability-engine.js';
 import { XP_PER_LEVEL, CANVAS_WIDTH, CANVAS_HEIGHT } from '../data/world-config.js';
 
@@ -116,6 +117,7 @@ export function initializeGame() {
 
     gameState.running      = true;
     gameState.lastTime     = 0;
+    gameState.tick         = 0;
     gameState.xp           = 0;
     gameState.gold         = 0;
     gameState.totalFarmed  = 0;
@@ -140,6 +142,7 @@ export function initializeGame() {
 
     resetBlight();
     resetArrays();
+    resetBots();
     resetVisionGrid();
     resetDamageNumbers();
     resetInventory(markHudDirty);
@@ -149,6 +152,7 @@ export function initializeGame() {
 
     initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 300);
     setupCreeps();
+    initializeBots();
     initEntityVisuals();
     markHudDirty();
     updateHud(_player, gameState, CooldownState, Creeps.length, 4, XP_PER_LEVEL, true, { blight: Blight });

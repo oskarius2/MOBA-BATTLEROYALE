@@ -1,0 +1,8 @@
+[33m89bfc2b[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m docs: Add quick reference guide for developers
+[33m3d903c7[m docs: Add complete refactor status report
+[33m658d4ea[m docs: Add comprehensive refactor summary with before/after comparisons
+[33mb4d1162[m docs: Add particle pool upgrade + biome map reference guides
+[33m7047715[m refactor: Upgrade ParticleSystem to Object Pool + expand biome system
+[33mdb501b8[m feat: Add BotBrain FSM AI system for deterministic bot entities
+[33m188579a[m im the boss
+[33m868995b[m superduperupdate

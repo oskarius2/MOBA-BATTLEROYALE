@@ -11,8 +11,9 @@ import { getTerrainType } from './ability-engine.js';
 import {
     drawForestBackground, drawTerrainBiomes, drawEnvironmentObstacles,
     drawBlightZone, drawFogOfWar, drawWeaponSwingVisuals,
-    drawDecoratedProjectile,
+    drawDecoratedProjectile, drawBotModel,
 } from './canvas-renderer.js';
+import { Bots } from './bot-manager.js';
 import { tickWeaponArcAnimation } from './rendering/weapon-arc-renderer.js';
 import { DroppedItem } from './entities/item.js';
 import { rollDrop, playerLootState } from './economy-engine.js';
@@ -31,6 +32,7 @@ export const gameState = {
     selectedClass:    null,
     selectedHeroKey:  null,
     lastTime:         0,
+    tick:             0,
     xp:               0,
     gold:             0,
     totalFarmed:      0,
@@ -108,6 +110,32 @@ export function updateGameLogic(deltaTime) {
 
     updateBlight(deltaTime);
 
+    gameState.tick += 1;
+    const botGameState = {
+        circleShrinking: true,
+        circleCenter:    Blight.center,
+        circleRadius:    Blight.currentRadius,
+        players:         _player.isAlive ? [_player] : [],
+        bots:            Bots,
+        creeps:          Creeps,
+        deltaTime,
+        tick:            gameState.tick,
+    };
+
+    for (let i = Bots.length - 1; i >= 0; i--) {
+        const bot = Bots[i];
+        if (!bot.isAlive) {
+            Bots.splice(i, 1);
+            continue;
+        }
+        bot.update(botGameState);
+
+        if (_player.isAlive &&
+            Math.hypot(_player.x - bot.x, _player.y - bot.y) < _player.radius + bot.radius) {
+            _player.takeDamage(bot.projectileDamage * 0.05 * deltaTime / 1000);
+        }
+    }
+
     // Creep-uppdatering
     for (let i = Creeps.length - 1; i >= 0; i--) {
         const creep = Creeps[i];
@@ -127,6 +155,18 @@ export function updateGameLogic(deltaTime) {
                     grantKillRewards(dead);
                 });
                 Projectiles.splice(j, 1);
+                continue;
+            }
+
+            for (let k = Bots.length - 1; k >= 0; k--) {
+                const bot = Bots[k];
+                if (!bot.isAlive) continue;
+                const botHit = Math.hypot(proj.x - bot.x, proj.y - bot.y) < proj.radius + bot.radius;
+                if (botHit) {
+                    bot.takeDamage(proj.damage);
+                    Projectiles.splice(j, 1);
+                    break;
+                }
             }
         }
     }
@@ -169,7 +209,7 @@ export function updateGameLogic(deltaTime) {
     for (const creep of Creeps) {
         if (creep.isDead) continue;
         if (Math.hypot(_player.x - creep.x, _player.y - creep.y) < _player.radius + creep.radius) {
-            _player.takeDamage(creep.contactDamage * deltaTime / 16);
+            _player.takeDamage(creep.contactDamage * deltaTime / 1000);
         }
     }
 
@@ -256,6 +296,13 @@ export function renderGame(deltaTime, time = 0) {
         if (!c.isDead && isObjectVisible(c, _viewportWidth, _viewportHeight)) c.draw(_ctx, time);
     }
 
+    // Bots
+    for (const bot of Bots) {
+        if (bot.isAlive && isObjectVisible(bot, _viewportWidth, _viewportHeight)) {
+            drawBotModel(_ctx, bot);
+        }
+    }
+
     // Items
     for (const item of ItemPool) {
         if (!item.isCollected && isObjectVisible(item, _viewportWidth, _viewportHeight)) item.draw(_ctx);
@@ -266,7 +313,7 @@ export function renderGame(deltaTime, time = 0) {
         if (p.isDead) continue;
         if (!isObjectVisible(p, _viewportWidth, _viewportHeight)) continue;
         if (p.type === 'firebolt' || p.type === 'arrow') {
-            drawDecoratedProjectile(_ctx, p);
+            drawDecoratedProjectile(_ctx, p, camera);
         } else {
             _ctx.beginPath();
             _ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);

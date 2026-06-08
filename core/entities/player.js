@@ -23,6 +23,7 @@ const HERO_RENDERERS = {
 
 export class Player {
     constructor(x, y) {
+        this.id               = 'local-player';
         this.x                = x;
         this.y                = y;
         this.radius           = 25;
@@ -51,6 +52,10 @@ export class Player {
         this.onLevelUp   = null;   // () => void
         this.onDeath     = null;   // () => void
         this.getPointer  = null;   // () => {x, y}
+    }
+
+    get isAlive() {
+        return this.hp > 0;
     }
 
     update(keys) {
