@@ -38,6 +38,7 @@ export const HERO_ROSTER = {
         speed:             HERO_BASE_STATS.Warrior.speed,             // 3.6
         projectileDamage:  HERO_BASE_STATS.Warrior.projectileDamage,  //  26
         radius:            HERO_BASE_STATS.Warrior.radius,            //  26
+        mass:              HERO_BASE_STATS.Warrior.mass,
         levelGrowth:       HERO_LEVEL_GROWTH.Warrior,
         skills: {
             skill1: 'Dash Strike',
@@ -54,6 +55,7 @@ export const HERO_ROSTER = {
         speed:             HERO_BASE_STATS.Ranger.speed,              //   4.2
         projectileDamage:  HERO_BASE_STATS.Ranger.projectileDamage,   //  16  (var 18)
         radius:            HERO_BASE_STATS.Ranger.radius,             //  24
+        mass:              HERO_BASE_STATS.Ranger.mass,
         levelGrowth:       HERO_LEVEL_GROWTH.Ranger,
         skills: {
             skill1: 'Volley',
@@ -70,6 +72,7 @@ export const HERO_ROSTER = {
         speed:             HERO_BASE_STATS['Tank-Viking'].speed,              //   3.0
         projectileDamage:  HERO_BASE_STATS['Tank-Viking'].projectileDamage,   //  50  (var 14)
         radius:            HERO_BASE_STATS['Tank-Viking'].radius,             //  28
+        mass:              HERO_BASE_STATS['Tank-Viking'].mass,
         shieldHp:          HERO_BASE_STATS['Tank-Viking'].shieldHp,           //  20  (nytt)
         levelGrowth:       HERO_LEVEL_GROWTH['Tank-Viking'],
         skills: {
@@ -87,6 +90,7 @@ export const HERO_ROSTER = {
         speed:             HERO_BASE_STATS.Hybrid.speed,               //   4.0
         projectileDamage:  HERO_BASE_STATS.Hybrid.projectileDamage,    //  35  (var 20)
         radius:            HERO_BASE_STATS.Hybrid.radius,              //  25
+        mass:              HERO_BASE_STATS.Hybrid.mass,
         levelGrowth:       HERO_LEVEL_GROWTH.Hybrid,
         skills: {
             skill1: 'Stance Swap',
@@ -103,6 +107,7 @@ export const HERO_ROSTER = {
         speed:             HERO_BASE_STATS.Mage.speed,                 //   3.8
         projectileDamage:  HERO_BASE_STATS.Mage.projectileDamage,      //  19  (var 24)
         radius:            HERO_BASE_STATS.Mage.radius,                //  23
+        mass:              HERO_BASE_STATS.Mage.mass,
         levelGrowth:       HERO_LEVEL_GROWTH.Mage,
         skills: {
             skill1: 'Fireball',

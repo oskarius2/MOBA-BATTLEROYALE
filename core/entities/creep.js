@@ -24,6 +24,7 @@ export class Creep {
         this.maxHp       = type.maxHp;
         this.hp          = type.maxHp;
         this.radius      = type.radius;
+        this.mass        = type.mass ?? 1;
         this.speed       = type.speed;
         this.contactDamage = type.contactDamage;
         this.xpReward    = type.xpReward;

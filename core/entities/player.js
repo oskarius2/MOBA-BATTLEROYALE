@@ -28,6 +28,7 @@ export class Player {
         this.x                = x;
         this.y                = y;
         this.radius           = 25;
+        this.mass             = 2;
         this.hp               = 100;
         this.maxHp            = 100;
         this.speed            = 4;

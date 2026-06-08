@@ -5,6 +5,11 @@
 
 import { gameSettings, setGameSetting } from './game-settings.js';
 import { clearDamageNumbers } from './damage-numbers.js';
+import {
+    drawMenuHeroPreview,
+    initMenuHeroPreviews,
+    stopMenuPreviewAnimation,
+} from './menu-hero-preview.js';
 
 const MENU_STYLES = `
     :root {
@@ -433,63 +438,50 @@ const MENU_STYLES = `
     }
 
     .menu-body {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) min(340px, 34vw);
-        gap: clamp(16px, 2.5vw, 28px);
+        display: flex;
+        flex-direction: column;
+        gap: clamp(14px, 2vw, 20px);
         width: 100%;
         min-height: 0;
-        align-items: stretch;
-    }
-
-    @media (max-width: 900px) {
-        .menu-body { grid-template-columns: 1fr; }
     }
 
     .hero-card-grid {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-content: flex-start;
-        gap: 14px;
-        padding: 4px 2px;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        width: 100%;
+        padding: 2px 0;
     }
 
-    .hero-card-grid .hero-card {
-        flex: 0 1 calc(20% - 12px);
-        min-width: 148px;
-        max-width: 188px;
-    }
-
-    @media (max-width: 960px) {
-        .hero-card-grid .hero-card {
-            flex: 0 1 calc(33.333% - 12px);
-            max-width: none;
-        }
-    }
-
-    @media (max-width: 560px) {
-        .hero-card-grid .hero-card {
-            flex: 0 1 calc(50% - 10px);
-            min-width: 130px;
+    @media (max-width: 820px) {
+        .hero-card-grid {
+            grid-template-columns: repeat(5, minmax(112px, 1fr));
+            overflow-x: auto;
+            padding-bottom: 10px;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
         }
     }
 
     .hero-card {
         position: relative;
+        display: flex;
+        flex-direction: column;
         border: 1px solid var(--glass-border);
-        border-radius: 8px;
+        border-radius: 10px;
         background: var(--glass-bg);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        padding: 16px 14px;
-        min-height: 108px;
+        backdrop-filter: blur(14px) saturate(1.2);
+        -webkit-backdrop-filter: blur(14px) saturate(1.2);
+        padding: 0;
+        min-height: 0;
         cursor: pointer;
-        text-align: left;
+        text-align: center;
         font-family: inherit;
         color: inherit;
         transition: border-color 0.25s, box-shadow 0.25s, transform 0.2s var(--menu-spring);
         overflow: hidden;
-        box-shadow: inset 0 1px 0 var(--glass-highlight);
+        box-shadow: inset 0 1px 0 var(--glass-highlight), 0 4px 20px rgba(0, 0, 0, 0.2);
+        scroll-snap-align: start;
     }
 
     .hero-card::before {
@@ -527,40 +519,87 @@ const MENU_STYLES = `
         50% { filter: brightness(1.15); }
     }
 
-    .hero-card-role { font-size: 9px; letter-spacing: 0.22em; color: var(--df-text-dim); margin-bottom: 4px; }
-    .hero-card-title { font-family: 'Cinzel', Georgia, serif; font-size: 15px; font-weight: 600; color: var(--df-text); margin-bottom: 2px; }
-    .hero-card-subtitle { font-size: 10px; color: var(--df-copper-light); letter-spacing: 0.06em; }
-
-    .hero-card-icon {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        width: 26px;
-        height: 26px;
-        opacity: 0.5;
+    .hero-card-preview {
+        position: relative;
+        height: 128px;
         display: flex;
-        align-items: center;
+        align-items: flex-end;
         justify-content: center;
+        background: linear-gradient(180deg, rgba(8, 16, 10, 0.2) 0%, rgba(2, 5, 3, 0.5) 100%);
+        border-bottom: 1px solid rgba(139, 105, 20, 0.18);
+        overflow: hidden;
     }
 
-    .hero-card-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+    .hero-preview-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .hero-card-meta {
+        padding: 10px 8px 12px;
+    }
+
+    .hero-card-role {
+        font-size: 8px;
+        letter-spacing: 0.2em;
+        color: var(--df-text-dim);
+        margin-bottom: 4px;
+    }
+
+    .hero-card-title {
+        font-family: 'Cinzel', Georgia, serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--df-text);
+        line-height: 1.25;
+    }
 
     .hero-details-pane {
         border: 1px solid var(--glass-border);
         background: var(--glass-bg);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        padding: 20px 18px;
-        display: flex;
-        flex-direction: column;
-        min-height: 280px;
-        max-height: min(56vh, 500px);
-        overflow-y: auto;
+        backdrop-filter: blur(16px) saturate(1.25);
+        -webkit-backdrop-filter: blur(16px) saturate(1.25);
+        padding: 18px 20px;
+        display: grid;
+        grid-template-columns: minmax(150px, 200px) minmax(0, 1fr);
+        gap: clamp(16px, 2.5vw, 24px);
+        align-items: start;
+        min-height: 220px;
         box-shadow: inset 0 1px 0 var(--glass-highlight), 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
+    @media (max-width: 640px) {
+        .hero-details-pane {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .details-preview-wrap {
+        position: relative;
+        border: 1px solid rgba(139, 105, 20, 0.25);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgba(8, 16, 10, 0.35) 0%, rgba(2, 5, 3, 0.65) 100%);
+        overflow: hidden;
+        aspect-ratio: 1;
+        max-height: 200px;
+    }
+
+    .hero-detail-canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    .details-content {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 180px;
+    }
+
     .details-empty {
-        flex: 1;
+        grid-column: 1 / -1;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -570,6 +609,7 @@ const MENU_STYLES = `
         letter-spacing: 0.1em;
         text-transform: uppercase;
         line-height: 1.7;
+        min-height: 180px;
     }
 
     .details-hero-name { font-family: 'Cinzel', Georgia, serif; font-size: 24px; font-weight: 700; letter-spacing: 0.05em; margin: 0 0 4px; color: var(--df-text); }
@@ -729,14 +769,6 @@ const HERO_GLOW_CLASS = {
     mage: 'hero-card-glow-mage',
 };
 
-const HERO_SVG = {
-    warrior: '<svg viewBox="0 0 24 24"><path d="M4 4l7 16 2-7 7-2z"/><path d="M14 6l4 4"/></svg>',
-    ranger: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4"/></svg>',
-    tank: '<svg viewBox="0 0 24 24"><path d="M6 8h12v10H6z"/><path d="M4 10h16M8 8V5h8v3"/></svg>',
-    hybrid: '<svg viewBox="0 0 24 24"><path d="M12 2l3 7 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>',
-    mage: '<svg viewBox="0 0 24 24"><path d="M12 2l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z"/></svg>',
-};
-
 const HERO_LORE = {
     warrior: 'Forged in border wars, the Bladed Duelist closes distance with brutal precision.',
     ranger: 'Silent as mist through the canopy. Superior speed and sustained ranged pressure.',
@@ -746,7 +778,7 @@ const HERO_LORE = {
 };
 
 const HERO_DIFFICULTY = { warrior: 2, ranger: 3, tank: 1, hybrid: 4, mage: 3 };
-const STAT_MAX = { maxHp: 180, speed: 4.2, projectileDamage: 26 };
+const STAT_MAX = { maxHp: 160, speed: 4.2, projectileDamage: 50 };
 
 let selectedHeroKey = null;
 let onEnterCallback = null;
@@ -823,25 +855,33 @@ function populateHeroDetailsPane(heroKey, hero) {
     const atkPct = Math.round((hero.projectileDamage / STAT_MAX.projectileDamage) * 100);
 
     pane.innerHTML = `
-        <h2 class="details-hero-name">${hero.title}</h2>
-        <div class="details-hero-class">${hero.classKey}</div>
-        <div class="details-difficulty">
-            <span>Difficulty</span>
-            <div class="difficulty-stars" aria-label="${diff} out of 5">${renderDifficultyStars(diff)}</div>
+        <div class="details-preview-wrap">
+            <canvas class="hero-detail-canvas" width="256" height="256" data-hero-class="${hero.classKey}" aria-hidden="true"></canvas>
         </div>
-        <p class="details-lore">${HERO_LORE[heroKey] ?? ''}</p>
-        <div class="details-stats">
-            <div class="stat-row"><span>Health</span><div class="stat-bar-track"><div class="stat-bar-fill stat-hp" style="width:0%" data-target="${hpPct}"></div></div><span class="stat-value">${hero.maxHp}</span></div>
-            <div class="stat-row"><span>Speed</span><div class="stat-bar-track"><div class="stat-bar-fill stat-spd" style="width:0%" data-target="${spdPct}"></div></div><span class="stat-value">${hero.speed}</span></div>
-            <div class="stat-row"><span>Attack</span><div class="stat-bar-track"><div class="stat-bar-fill stat-atk" style="width:0%" data-target="${atkPct}"></div></div><span class="stat-value">${hero.projectileDamage}</span></div>
-        </div>
-        <div class="details-skills">
-            <div class="details-skills-title">Abilities</div>
-            <div class="details-skill"><strong>1</strong> — ${hero.skills.skill1}</div>
-            <div class="details-skill"><strong>2</strong> — ${hero.skills.skill2}</div>
-            <div class="details-skill"><strong>3</strong> — ${hero.skills.ult}</div>
+        <div class="details-content">
+            <h2 class="details-hero-name">${hero.title}</h2>
+            <div class="details-hero-class">${hero.classKey}</div>
+            <div class="details-difficulty">
+                <span>Difficulty</span>
+                <div class="difficulty-stars" aria-label="${diff} out of 5">${renderDifficultyStars(diff)}</div>
+            </div>
+            <p class="details-lore">${HERO_LORE[heroKey] ?? ''}</p>
+            <div class="details-stats">
+                <div class="stat-row"><span>Health</span><div class="stat-bar-track"><div class="stat-bar-fill stat-hp" style="width:0%" data-target="${hpPct}"></div></div><span class="stat-value">${hero.maxHp}</span></div>
+                <div class="stat-row"><span>Speed</span><div class="stat-bar-track"><div class="stat-bar-fill stat-spd" style="width:0%" data-target="${spdPct}"></div></div><span class="stat-value">${hero.speed}</span></div>
+                <div class="stat-row"><span>Attack</span><div class="stat-bar-track"><div class="stat-bar-fill stat-atk" style="width:0%" data-target="${atkPct}"></div></div><span class="stat-value">${hero.projectileDamage}</span></div>
+            </div>
+            <div class="details-skills">
+                <div class="details-skills-title">Abilities</div>
+                <div class="details-skill"><strong>1</strong> — ${hero.skills.skill1}</div>
+                <div class="details-skill"><strong>2</strong> — ${hero.skills.skill2}</div>
+                <div class="details-skill"><strong>3</strong> — ${hero.skills.ult}</div>
+            </div>
         </div>
     `;
+
+    const detailCanvas = pane.querySelector('.hero-detail-canvas');
+    if (detailCanvas) drawMenuHeroPreview(detailCanvas, hero.classKey, { frame: 0 });
 
     requestAnimationFrame(() => {
         pane.querySelectorAll('.stat-bar-fill').forEach(bar => {
@@ -873,6 +913,7 @@ export function selectHero(heroKey, heroRoster) {
 
 export function hideClassSelectOverlay() {
     _pausedForSettings = false;
+    stopMenuPreviewAnimation();
     getOverlay()?.classList.add('hidden');
 }
 
@@ -907,12 +948,14 @@ export function showClassSelectMenu(options = {}) {
     } else {
         setStage('class-select');
         updateBreadcrumb();
+        initMenuHeroPreviews();
     }
 }
 
 function goToClassSelect() {
     setStage('class-select');
     updateBreadcrumb();
+    initMenuHeroPreviews();
 }
 
 function bindWelcomeStage() {
@@ -925,6 +968,7 @@ function bindWelcomeStage() {
         if (welcomeTimer) clearTimeout(welcomeTimer);
         setStage('class-select');
         updateBreadcrumb();
+        initMenuHeroPreviews();
     };
 
     continueBtn?.addEventListener('click', dismissWelcome);
@@ -1005,16 +1049,23 @@ export function initHeroSelectMenu(heroRoster, onEnter) {
         card.setAttribute('aria-selected', 'false');
         card.setAttribute('aria-label', `${hero.title}, ${hero.classKey}`);
         card.innerHTML = `
-            <span class="hero-card-icon" aria-hidden="true">${HERO_SVG[key] ?? ''}</span>
-            <div class="hero-card-role">${hero.role.toUpperCase()}</div>
-            <div class="hero-card-title">${hero.title}</div>
-            <div class="hero-card-subtitle">${hero.classKey}</div>
+            <div class="hero-card-preview">
+                <canvas class="hero-preview-canvas" width="160" height="160" data-hero-class="${hero.classKey}" aria-hidden="true"></canvas>
+            </div>
+            <div class="hero-card-meta">
+                <div class="hero-card-role">${hero.role.toUpperCase()}</div>
+                <div class="hero-card-title">${hero.title}</div>
+            </div>
         `;
         card.addEventListener('click', () => selectHero(key, heroRoster));
         grid.appendChild(card);
+
+        const previewCanvas = card.querySelector('.hero-preview-canvas');
+        if (previewCanvas) drawMenuHeroPreview(previewCanvas, hero.classKey, { frame: 0 });
     }
 
     enterBtn.addEventListener('click', () => deploySelectedHero());
+    initMenuHeroPreviews();
 
     bindWelcomeStage();
     bindMainStage();

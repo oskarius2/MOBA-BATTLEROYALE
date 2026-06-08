@@ -1,6 +1,6 @@
 {
-  "useSprites": true,
-  "_comment": "Sprites enabled when baked PNGs pass dimension validation in sprite-sheet-manager.js. Re-run scripts/bake-art-sheets.py after replacing JPG sources.",
+  "useSprites": false,
+  "_comment": "Keep false until top-down PNG art ships (see ASSETS-SPEC.md). Set true after bake + validation, then hard reload.",
   "_spec": {
     "heroes": {
       "frameSize": 128,

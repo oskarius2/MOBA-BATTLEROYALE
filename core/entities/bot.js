@@ -28,6 +28,7 @@ export class Bot {
         this.vx = 0;
         this.vy = 0;
         this.radius = hero?.radius ?? 26;
+        this.mass = hero?.mass ?? 2;
         this.speed = hero?.speed ?? 3.6;
 
         this.maxHp = hero?.maxHp ?? 130;

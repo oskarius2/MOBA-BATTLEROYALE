@@ -634,10 +634,20 @@ export function drawCreepModel(ctx, creep, time = 0) {
 // Alla drawHeroX-funktioner konverterar world→screen via player.draw() i player.js.
 // Tar screen-coords (x, y) direkt — caller ansvarar för konverteringen.
 
+function drawFootShadow(ctx, x, y, rx = 14, ry = 5) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
+    ctx.beginPath();
+    ctx.ellipse(x, y + 3, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
 export function drawHeroPyromancer(ctx, x, y, angle, speed = 0, time = 0) {
     const pulse   = 0.5 + 0.5 * Math.sin(time * 0.005);
     const robeLen = 20;
     const shoulderW = 14;
+    drawFootShadow(ctx, x, y, 13, 5);
     drawRuneGlow(ctx, x, y - 8, 38 + pulse * 6, time, 'rgba(201,162,39,0.55)', 'rgba(139,105,20,0.25)');
     withOrientation(ctx, x, y, angle, (c) => {
         c.beginPath();
@@ -672,6 +682,7 @@ export const drawHeroMage = drawHeroPyromancer;
 
 export function drawHeroWarrior(ctx, x, y, angle, speed = 0, time = 0) {
     const pulse = 0.5 + 0.5 * Math.sin(time * 0.006);
+    drawFootShadow(ctx, x, y, 16, 5);
     withOrientation(ctx, x, y, angle, (c) => {
         const bodyR = 18;
         c.beginPath(); c.ellipse(0, 0, bodyR, bodyR * 0.85, 0, 0, Math.PI * 2);
@@ -690,6 +701,7 @@ export function drawHeroWarrior(ctx, x, y, angle, speed = 0, time = 0) {
 
 export function drawHeroRanger(ctx, x, y, angle, speed = 0, time = 0) {
     const pulse = 0.5 + 0.5 * Math.sin(time * 0.007);
+    drawFootShadow(ctx, x, y, 11, 4);
     withOrientation(ctx, x, y, angle, (c) => {
         c.beginPath(); c.ellipse(0, 0, 12, 16, 0, 0, Math.PI * 2);
         c.fillStyle = '#142014'; c.fill(); c.strokeStyle = '#3a5a3a'; c.lineWidth = 2; c.stroke();
@@ -711,6 +723,7 @@ export function drawHeroRanger(ctx, x, y, angle, speed = 0, time = 0) {
 
 export function drawHeroViking(ctx, x, y, angle, speed = 0, time = 0) {
     const pulse = 0.5 + 0.5 * Math.sin(time * 0.004);
+    drawFootShadow(ctx, x, y, 18, 6);
     drawRuneGlow(ctx, x, y, 44, time, 'rgba(200,180,120,0.45)', 'rgba(160,140,80,0.2)');
     withOrientation(ctx, x, y, angle, (c) => {
         const bodyR = 22;
@@ -736,6 +749,7 @@ export function drawHeroViking(ctx, x, y, angle, speed = 0, time = 0) {
 export function drawHeroHybrid(ctx, x, y, angle, speed = 0, time = 0) {
     const pulse = 0.5 + 0.5 * Math.sin(time * 0.005);
     const morph = 0.5 + 0.5 * Math.sin(time * 0.002);
+    drawFootShadow(ctx, x, y, 14, 5);
     withOrientation(ctx, x, y, angle, (c) => {
         c.beginPath(); c.ellipse(0, 0, 16, 14 + morph * 4, 0, 0, Math.PI * 2);
         c.fillStyle   = morph > 0.5 ? '#1a1428' : '#142018';

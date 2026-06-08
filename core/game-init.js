@@ -113,6 +113,7 @@ export function applyHeroConfig(heroKey) {
     _player.speed            = hero.speed;
     _player.projectileDamage = hero.projectileDamage;
     _player.radius           = hero.radius;
+    _player.mass             = hero.mass ?? 2;
     _player.skills           = { ...hero.skills };
     _player.heroTitle        = hero.title;
     _player.heroRole         = hero.role;

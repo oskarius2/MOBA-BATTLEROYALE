@@ -49,6 +49,7 @@ export const HERO_BASE_STATS = {
         projectileDamage:  26,    // skada/grundattack
         speed:            3.6,    // px/tick (game-units)
         radius:            26,    // px, kollisionsradie
+        mass:               2,    // separation weight (heavier = knuffas mindre)
         baseArmor:          3,    // se damageReduction() nedan
     },
     'Tank-Viking': {
@@ -56,6 +57,7 @@ export const HERO_BASE_STATS = {
         projectileDamage:  50,    // skada/grundattack  (var 14 — massivt fel)
         speed:            3.0,    // px/tick
         radius:            28,    // px
+        mass:               3,
         baseArmor:          5,    // högsta armor i roster
         shieldHp:          20,    // extra HP-pool absorberas före main HP
     },
@@ -64,6 +66,7 @@ export const HERO_BASE_STATS = {
         projectileDamage:  19,    // skada/grundattack  (var 24 — för hög DPS)
         speed:            3.8,    // px/tick
         radius:            23,    // px
+        mass:               1,
         baseArmor:          2,    // lägsta armor (glass cannon)
     },
     Ranger: {
@@ -71,6 +74,7 @@ export const HERO_BASE_STATS = {
         projectileDamage:  16,    // skada/grundattack  (var 18)
         speed:            4.2,    // px/tick  (snabbast bland ranged)
         radius:            24,    // px
+        mass:               1,
         baseArmor:          2,
     },
     Hybrid: {
@@ -78,6 +82,7 @@ export const HERO_BASE_STATS = {
         projectileDamage:  35,    // skada/grundattack  (var 20 — för låg DPS)
         speed:            4.0,    // px/tick
         radius:            25,    // px
+        mass:               2,
         baseArmor:          2,
     },
 };

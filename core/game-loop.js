@@ -33,6 +33,7 @@ import {
     drawDecoratedProjectile, drawBotModel,
 } from './canvas-renderer.js';
 import { Bots }                    from './bot-manager.js';
+import { resolveAllSolidCollisions } from './collision.js';
 import { tickWeaponArcAnimation }  from './rendering/weapon-arc-renderer.js';
 import { DroppedItem }             from './entities/item.js';
 import { rollDrop, playerLootState }           from './economy-engine.js';
@@ -186,6 +187,17 @@ export function updateGameLogic(deltaTime) {
             }
         }
     }
+
+    // Solid entity separation (player, bots, creeps) — mass-weighted, i/j = i+1
+    const solidEntities = [];
+    if (_player.hp > 0) solidEntities.push(_player);
+    for (const bot of Bots) {
+        if (bot.isAlive) solidEntities.push(bot);
+    }
+    for (const creep of Creeps) {
+        if (!creep.isDead) solidEntities.push(creep);
+    }
+    resolveAllSolidCollisions(solidEntities);
 
     // Projektil-uppdatering
     for (let i = Projectiles.length - 1; i >= 0; i--) {

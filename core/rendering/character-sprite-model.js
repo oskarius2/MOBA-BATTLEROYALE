@@ -14,6 +14,17 @@ import {
 
 const HERO_DRAW_SCALE = 0.55;
 
+/** Ellips-skugga under fötter (origo = fotposition, ritas före rotate). */
+function _drawFootShadow(ctx, radius) {
+    const rx = Math.max(10, (radius ?? 24) * 0.55);
+    ctx.save();
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
+    ctx.beginPath();
+    ctx.ellipse(0, 3, rx, rx * 0.32, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+}
+
 export class CharacterSpriteModel {
     /**
      * @param {object} player — Player entity (read-only for visuals)
@@ -94,21 +105,25 @@ export class CharacterSpriteModel {
         );
 
         ctx.save();
+        // 1. Flytta till karaktärens skärmkoordinat (fötternas position)
         ctx.translate(screenX, screenY);
+        _drawFootShadow(ctx, player.radius);
+        // 2. Rotera runt fötterna (origo vid fötter)
         ctx.rotate(this.visualFacingAngle);
 
         if (frame?.image) {
             const scale = HERO_DRAW_SCALE;
             const dw = frame.sw * scale;
             const dh = frame.sh * scale;
-            const bob = this.currentAnimState === AnimState.WALK
+            const bobAmplitude = this.currentAnimState === AnimState.WALK
                 ? Math.sin(time * 0.008) * 3
                 : 0;
 
+            // 3. Rita spriten uppåt från fot-origo: centrerad i X, hela höjden ovanför fötter
             ctx.drawImage(
                 frame.image,
                 frame.sx, frame.sy, frame.sw, frame.sh,
-                -dw / 2, -dh / 2 + bob, dw, dh
+                -dw / 2, -dh + bobAmplitude, dw, dh
             );
 
             if (this.currentAnimState === AnimState.ATTACK) {
@@ -125,11 +140,12 @@ export class CharacterSpriteModel {
 
     _drawAttackGlow(ctx, dw, dh, time) {
         const pulse = 0.3 + Math.abs(Math.sin(time * 0.02)) * 0.2;
+        const bodyCy = -dh * 0.45;
         ctx.globalAlpha = pulse;
         ctx.strokeStyle = 'rgba(255, 140, 0, 0.6)';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.ellipse(0, 0, dw * 0.55, dh * 0.45, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, bodyCy, dw * 0.55, dh * 0.45, 0, 0, Math.PI * 2);
         ctx.stroke();
         ctx.globalAlpha = 1;
     }
@@ -138,9 +154,10 @@ export class CharacterSpriteModel {
         const isMelee = this.player.stance === 'MELEE';
         const daggerColor = '156, 39, 176';
         const bowColor = '141, 110, 99';
+        const bodyLift = -35;
 
         if (isMelee) {
-            const yOffset = Math.cos(time * 0.05) * 5;
+            const yOffset = bodyLift + Math.cos(time * 0.05) * 5;
             ctx.strokeStyle = `rgba(${daggerColor}, ${0.5 + Math.abs(Math.sin(time * 0.02)) * 0.4})`;
             ctx.lineWidth = 4;
             ctx.beginPath();
@@ -155,13 +172,13 @@ export class CharacterSpriteModel {
             ctx.strokeStyle = `rgba(${bowColor}, 0.9)`;
             ctx.lineWidth = 10;
             ctx.beginPath();
-            ctx.ellipse(20, 0, 45, 12, Math.PI / 4, 0, Math.PI * 2);
+            ctx.ellipse(20, bodyLift, 45, 12, Math.PI / 4, 0, Math.PI * 2);
             ctx.stroke();
             ctx.strokeStyle = `rgba(${bowColor}, 0.7)`;
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(-5, -15);
-            ctx.lineTo(15, -12);
+            ctx.moveTo(-5, bodyLift - 15);
+            ctx.lineTo(15, bodyLift - 12);
             ctx.stroke();
         }
     }
