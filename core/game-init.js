@@ -13,7 +13,10 @@ import { camera, updateCamera }    from './camera.js';
 import { resetAbilityState }       from './ability-engine.js';
 import { playerLootState }         from './economy-engine.js';
 import { calculateItemCost }       from './economy-engine.js';
-import { initForestEnvironment }   from './canvas-renderer.js';
+import {
+    initForestEnvironment, drawForestBackground,
+    drawTerrainBiomes, drawEnvironmentObstacles,
+} from './canvas-renderer.js';
 import { updateShopUI } from '../ui/shop-interface.js';
 import { checkMapPresenceUI } from '../ui/map-presence.js';
 import { closeInGameSettings } from '../ui/menu-interface.js';
@@ -45,6 +48,25 @@ export function setGameInitRefs({ player, getViewport }) {
 
 export function getPlayerClass() { return _playerClass; }
 
+/** Static jungle backdrop for menu glassmorphism (before game loop runs). */
+export function paintMenuBackdrop(ctx, viewportW, viewportH) {
+    initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 420);
+    updateCamera(
+        { x: CANVAS_WIDTH * 0.42, y: CANVAS_HEIGHT * 0.38 },
+        viewportW,
+        viewportH,
+    );
+    const time = performance.now();
+    ctx.fillStyle = '#030704';
+    ctx.fillRect(0, 0, viewportW, viewportH);
+    ctx.save();
+    ctx.translate(-camera.x, -camera.y);
+    drawForestBackground(ctx, camera, viewportW, viewportH, time);
+    drawTerrainBiomes(ctx, camera, viewportW, viewportH, 0);
+    drawEnvironmentObstacles(ctx, camera, viewportW, viewportH, () => true, time);
+    ctx.restore();
+}
+
 export async function ensureSpritesLoaded() {
     if (_spritesLoaded) return;
 
@@ -58,9 +80,10 @@ export async function ensureSpritesLoaded() {
         }
         const manifest = await response.json();
         await sheetMgr.loadAll(manifest);
-        const hasRealSprites = Object.values(sheetMgr.cache).some(
-            e => e.loaded && !e.placeholder && !e.failed
-        );
+        const hasRealSprites = manifest.useSprites === true &&
+            Object.values(sheetMgr.cache).some(
+                e => e.loaded && !e.placeholder && !e.failed
+            );
         setSpriteRendering(hasRealSprites);
         _spritesLoaded = true;
     } catch (err) {
@@ -169,7 +192,7 @@ export function initializeGame() {
     clearDamageNumbers();
     resetInventory(markHudDirty);
 
-    initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 300);
+    initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 420);
     setupCreeps();
     spawnBots(5);
     initEntityVisuals();

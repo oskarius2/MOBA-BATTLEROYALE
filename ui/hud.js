@@ -175,6 +175,26 @@ function getAttackCooldownMax(player, cfg) {
     return (cfg.ATTACK_SPEED ?? 500) / 1000;
 }
 
+function skillIconLabel(name, isBasic) {
+    if (isBasic) return '⚔';
+    const word = name.split(' ')[0] ?? name;
+    return word.length > 7 ? `${word.slice(0, 6)}…` : word;
+}
+
+function skillShortLabel(name, isBasic) {
+    if (isBasic) return 'Attack';
+    return name;
+}
+
+export function flashAbilitySlot(slotId) {
+    const el = slotEl(slotId);
+    if (!el) return;
+    el.classList.remove('cast-flash');
+    void el.offsetWidth;
+    el.classList.add('cast-flash');
+    setTimeout(() => el.classList.remove('cast-flash'), 400);
+}
+
 function updateAbilitySlot(slotId, remaining, maxCd, name, key, isUlt = false, isBasic = false) {
     const el = slotEl(slotId);
     if (!el) return;
@@ -194,12 +214,10 @@ function updateAbilitySlot(slotId, remaining, maxCd, name, key, isUlt = false, i
     if (timer) timer.textContent = onCd ? remaining.toFixed(1) : '';
 
     const nameEl = el.querySelector('.ability-name');
-    if (nameEl) nameEl.textContent = name;
+    if (nameEl) nameEl.textContent = skillShortLabel(name, isBasic);
 
     const iconEl = el.querySelector('.ability-icon');
-    if (iconEl) {
-        iconEl.textContent = isBasic ? '⚔' : (name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || name[0]);
-    }
+    if (iconEl) iconEl.textContent = skillIconLabel(name, isBasic);
 
     const keyEl = el.querySelector('.ability-key');
     if (keyEl) keyEl.textContent = key;

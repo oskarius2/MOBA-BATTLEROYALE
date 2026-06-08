@@ -272,7 +272,7 @@ export function renderGame(deltaTime, time = 0) {
     const shake = getCameraOffset();
     _ctx.translate(-(camera.x + shake.x), -(camera.y + shake.y));
 
-    drawForestBackground(_ctx, camera, _viewportWidth, _viewportHeight);
+    drawForestBackground(_ctx, camera, _viewportWidth, _viewportHeight, time);
     drawTerrainBiomes(_ctx, camera, _viewportWidth, _viewportHeight, deltaTime / 1000);
 
     // Ability-effekter
@@ -329,7 +329,7 @@ export function renderGame(deltaTime, time = 0) {
     }
 
     for (const bot of Bots) {
-        if (bot.isAlive && isObjectVisible(bot, _viewportWidth, _viewportHeight)) drawBotModel(_ctx, bot);
+        if (bot.isAlive && isObjectVisible(bot, _viewportWidth, _viewportHeight)) drawBotModel(_ctx, bot, time);
     }
 
     for (const item of ItemPool) {
@@ -365,10 +365,10 @@ export function renderGame(deltaTime, time = 0) {
     if (pointerActive) {
         _ctx.save();
         _ctx.translate(pointerScreen.x, pointerScreen.y);
-        _ctx.shadowColor              = '#00ffff';
-        _ctx.shadowBlur               = 15 + Math.sin(time * 0.005) * 3;
-        _ctx.globalCompositeOperation = 'lighter';
-        _ctx.strokeStyle = '#00ffff';
+        _ctx.shadowColor              = 'rgba(201, 162, 39, 0.6)';
+        _ctx.shadowBlur               = 8 + Math.sin(time * 0.005) * 2;
+        _ctx.globalCompositeOperation = 'source-over';
+        _ctx.strokeStyle = 'rgba(201, 162, 39, 0.85)';
         _ctx.lineWidth   = 1.5;
         _ctx.beginPath();
         _ctx.arc(0, 0, 12 + Math.sin(time * 0.005) * 2, 0, Math.PI * 2);

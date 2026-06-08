@@ -66,62 +66,66 @@
             </div>
         </div>
 
-        <div id="hud-action-bar">
-            <div id="hud-hero-block">
-                <div id="hud-portrait" aria-label="Hero portrait">
-                    <span id="hud-portrait-letter">?</span>
-                    <span id="hud-level-badge">1</span>
-                </div>
-                <div id="hud-stats-col">
-                    <div id="hud-hero-name">Champion</div>
-                    <div id="health-bar-container" class="hud-bar-wrap">
-                        <div id="health-bar" class="hud-bar-fill"></div>
-                        <span id="health-bar-text" class="hud-bar-text">100 / 100</span>
+        <div id="hud-action-bar" class="hud-panel">
+            <div class="hud-bar-row hud-bar-hero">
+                <div id="hud-hero-block">
+                    <div id="hud-portrait" aria-label="Hero portrait">
+                        <span id="hud-portrait-letter">?</span>
+                        <span id="hud-level-badge">1</span>
                     </div>
-                    <div id="xp-bar-container" class="hud-bar-wrap xp">
-                        <div id="xp-bar" class="hud-bar-fill"></div>
-                        <span id="xp-bar-text" class="hud-bar-text">0 / 100</span>
+                    <div id="hud-stats-col">
+                        <div id="hud-hero-name">Champion</div>
+                        <div id="health-bar-container" class="hud-bar-wrap">
+                            <div id="health-bar" class="hud-bar-fill"></div>
+                            <span id="health-bar-text" class="hud-bar-text">100 / 100</span>
+                        </div>
+                        <div id="xp-bar-container" class="hud-bar-wrap xp">
+                            <div id="xp-bar" class="hud-bar-fill"></div>
+                            <span id="xp-bar-text" class="hud-bar-text">0 / 100</span>
+                        </div>
+                        <div id="hud-gold-row">Gold <span class="hud-value" id="hud-gold-value">0</span></div>
+                        <div id="hud-buffs"></div>
                     </div>
-                    <div id="hud-gold-row">Gold <span class="hud-value" id="hud-gold-value">0</span></div>
-                    <div id="hud-buffs"></div>
                 </div>
             </div>
 
-            <div id="hud-abilities-row">
-                <div class="ability-slot" data-slot="q" aria-label="Q ability, ready">
-                    <span class="ability-key">1</span>
-                    <span class="ability-icon">Q</span>
-                    <div class="ability-cd-ring" aria-hidden="true"></div>
-                    <span class="ability-timer" aria-hidden="true"></span>
-                    <span class="ability-name">Q</span>
+            <div class="hud-bar-row hud-bar-actions">
+                <div id="hud-abilities-row">
+                    <div class="ability-slot" data-slot="q" aria-label="Skill 1, ready">
+                        <span class="ability-key">1</span>
+                        <div class="ability-icon-wrap"><span class="ability-icon">—</span></div>
+                        <div class="ability-cd-ring" aria-hidden="true"></div>
+                        <span class="ability-timer" aria-hidden="true"></span>
+                        <span class="ability-name">Skill 1</span>
+                    </div>
+                    <div class="ability-slot" data-slot="w" aria-label="Skill 2, ready">
+                        <span class="ability-key">2</span>
+                        <div class="ability-icon-wrap"><span class="ability-icon">—</span></div>
+                        <div class="ability-cd-ring" aria-hidden="true"></div>
+                        <span class="ability-timer" aria-hidden="true"></span>
+                        <span class="ability-name">Skill 2</span>
+                    </div>
+                    <div class="ability-slot ult" data-slot="e" aria-label="Ultimate, ready">
+                        <span class="ability-key">3</span>
+                        <div class="ability-icon-wrap"><span class="ability-icon">—</span></div>
+                        <div class="ability-cd-ring" aria-hidden="true"></div>
+                        <span class="ability-timer" aria-hidden="true"></span>
+                        <span class="ability-name">Ultimate</span>
+                    </div>
+                    <div class="ability-slot basic" data-slot="aa" aria-label="Attack, ready">
+                        <span class="ability-key">LMB</span>
+                        <div class="ability-icon-wrap"><span class="ability-icon">⚔</span></div>
+                        <div class="ability-cd-ring" aria-hidden="true"></div>
+                        <span class="ability-timer" aria-hidden="true"></span>
+                        <span class="ability-name">Attack</span>
+                    </div>
                 </div>
-                <div class="ability-slot" data-slot="w" aria-label="W ability, ready">
-                    <span class="ability-key">2</span>
-                    <span class="ability-icon">W</span>
-                    <div class="ability-cd-ring" aria-hidden="true"></div>
-                    <span class="ability-timer" aria-hidden="true"></span>
-                    <span class="ability-name">W</span>
-                </div>
-                <div class="ability-slot ult" data-slot="e" aria-label="Ultimate ability, ready">
-                    <span class="ability-key">3</span>
-                    <span class="ability-icon">E</span>
-                    <div class="ability-cd-ring" aria-hidden="true"></div>
-                    <span class="ability-timer" aria-hidden="true"></span>
-                    <span class="ability-name">E</span>
-                </div>
-                <div class="ability-slot basic" data-slot="aa" aria-label="Attack, ready">
-                    <span class="ability-key">LMB</span>
-                    <span class="ability-icon">⚔</span>
-                    <div class="ability-cd-ring" aria-hidden="true"></div>
-                    <span class="ability-timer" aria-hidden="true"></span>
-                    <span class="ability-name">Attack</span>
-                </div>
-            </div>
 
-            <div id="hud-inventory">
-                <div class="item-slot" id="slot-1" aria-label="Inventory slot 1">—</div>
-                <div class="item-slot" id="slot-2" aria-label="Inventory slot 2">—</div>
-                <div class="item-slot" id="slot-3" aria-label="Inventory slot 3">—</div>
+                <div id="hud-inventory">
+                    <div class="item-slot" id="slot-1" aria-label="Inventory slot 1">—</div>
+                    <div class="item-slot" id="slot-2" aria-label="Inventory slot 2">—</div>
+                    <div class="item-slot" id="slot-3" aria-label="Inventory slot 3">—</div>
+                </div>
             </div>
         </div>
 
@@ -135,6 +139,7 @@
     </div>
 
     <div id="class-select-overlay">
+        <div class="menu-bg-grid" aria-hidden="true"></div>
         <div class="menu-vignette" aria-hidden="true"></div>
         <div class="menu-ember-layer" aria-hidden="true"></div>
         <div class="menu-shimmer" aria-hidden="true"></div>
@@ -150,13 +155,15 @@
 
             <!-- Welcome -->
             <section class="menu-stage welcome-stage active" id="menu-stage-welcome">
-                <div class="welcome-glow-ring" aria-hidden="true"></div>
-                <span class="welcome-pre">Welcome to</span>
-                <div class="welcome-brand" id="welcome-brand" aria-label="MOBROYALE"></div>
-                <p class="welcome-tagline">Dark Jungle · Last Hero Standing</p>
-                <button type="button" class="glass-btn glass-btn-primary welcome-continue" id="welcome-continue-btn">
-                    Enter
-                </button>
+                <div class="welcome-center">
+                    <div class="welcome-glow-ring" aria-hidden="true"></div>
+                    <span class="welcome-pre">Welcome to</span>
+                    <div class="welcome-brand" id="welcome-brand" aria-label="MOBROYALE"></div>
+                    <p class="welcome-tagline">Dark Jungle · Last Hero Standing</p>
+                    <button type="button" class="glass-btn glass-btn-primary welcome-continue" id="welcome-continue-btn">
+                        Enter the Arena
+                    </button>
+                </div>
             </section>
 
             <!-- Main menu -->
@@ -246,8 +253,8 @@ import { initInput, keysPressed, pointerWorld } from './core/input.js';
 import { camera, getWorldCoordinates, updateCamera } from './core/camera.js';
 import { buyItem }         from './core/inventory.js';
 import { setGameLoopRefs, setKeysRef, gameState } from './core/game-loop.js';
-import { setGameInitRefs, initializeGame, applyHeroConfig, showGameOver, resetGame, getPlayerClass, ensureSpritesLoaded } from './core/game-init.js';
-import { showLevelUpFlash, markHudDirty } from './ui/hud.js';
+import { setGameInitRefs, initializeGame, applyHeroConfig, showGameOver, resetGame, getPlayerClass, ensureSpritesLoaded, paintMenuBackdrop } from './core/game-init.js';
+import { showLevelUpFlash, markHudDirty, flashAbilitySlot } from './ui/hud.js';
 import { toggleShopUI, isShopOpen, closeShopUI, updateShopUI } from './ui/shop-interface.js';
 import {
     initHeroSelectMenu, showClassSelectMenu, selectHero, buildWelcomeLetters,
@@ -306,7 +313,10 @@ initInput(canvas, {
     onBasicAttack: () => AbilityEngine.basicAttack(PlayerInstance, pointerWorld, Projectiles, Creeps),
     onAbility: (slot) => {
         const ok = AbilityEngine.cast(slot, PlayerInstance, pointerWorld, Projectiles, Creeps);
-        if (ok) markHudDirty();
+        if (ok) {
+            flashAbilitySlot(slot);
+            markHudDirty();
+        }
     },
 });
 
@@ -338,6 +348,7 @@ window.buyItem    = (itemId) => buyItem(itemId, getPlayerClass(), gameState, Pla
 window.onload = async () => {
     buildWelcomeLetters();
     onViewportResize();
+    paintMenuBackdrop(ctx, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
     await ensureSpritesLoaded();
     initHeroSelectMenu(HERO_ROSTER, (heroKey) => {
         applyHeroConfig(heroKey);

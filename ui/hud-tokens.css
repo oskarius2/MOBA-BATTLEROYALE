@@ -3,8 +3,11 @@
    ============================================================ */
 
 :root {
-    --hud-surface: linear-gradient(165deg, rgba(8, 18, 10, 0.92), rgba(3, 7, 4, 0.88));
-    --hud-surface-solid: rgba(6, 14, 8, 0.94);
+    --hud-glass: rgba(8, 18, 10, 0.68);
+    --hud-glass-border: rgba(201, 162, 39, 0.35);
+    --hud-glass-highlight: rgba(255, 255, 255, 0.06);
+    --hud-surface: linear-gradient(165deg, rgba(8, 18, 10, 0.82), rgba(3, 7, 4, 0.72));
+    --hud-surface-solid: rgba(6, 14, 8, 0.78);
     --hud-border-gold: rgba(201, 162, 39, 0.55);
     --hud-border-subtle: rgba(139, 105, 20, 0.35);
     --hud-text-primary: #f0e6c8;
@@ -42,9 +45,14 @@
 }
 
 .hud-panel {
-    background: var(--hud-surface);
-    border: 1px solid var(--hud-border-subtle);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), inset 0 0 30px rgba(0, 0, 0, 0.2);
+    background: var(--hud-glass);
+    backdrop-filter: blur(14px) saturate(1.15);
+    -webkit-backdrop-filter: blur(14px) saturate(1.15);
+    border: 1px solid var(--hud-glass-border);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 var(--hud-glass-highlight),
+        inset 0 0 30px rgba(0, 0, 0, 0.15);
     padding: 12px 14px;
     pointer-events: none;
 }
@@ -77,11 +85,13 @@
 
 #minimap-wrap {
     position: relative;
-    border: 2px solid var(--hud-border-gold);
+    border: 2px solid var(--hud-glass-border);
     border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    background: #030704;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), inset 0 1px 0 var(--hud-glass-highlight);
+    background: rgba(3, 7, 4, 0.75);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 #minimap {
@@ -94,8 +104,11 @@
     min-width: 168px;
     padding: 10px 12px;
     border-radius: 4px;
-    background: var(--hud-surface-solid);
-    border: 1px solid var(--hud-border-subtle);
+    background: var(--hud-glass);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--hud-glass-border);
+    box-shadow: inset 0 1px 0 var(--hud-glass-highlight);
     font-size: 11px;
     letter-spacing: 0.06em;
     text-align: center;
@@ -163,14 +176,36 @@
     left: 50%;
     transform: translateX(-50%);
     display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 16px 14px;
+    background: var(--hud-glass);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid var(--hud-glass-border);
+    border-radius: 8px;
+    box-shadow:
+        0 12px 40px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 var(--hud-glass-highlight);
+    width: min(94vw, 680px);
+    max-width: 680px;
+    box-sizing: border-box;
+}
+
+.hud-bar-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 0;
+}
+
+.hud-bar-row.hud-bar-actions {
     align-items: flex-end;
-    gap: 14px;
-    padding: 12px 18px;
-    background: var(--hud-surface);
-    border: 1px solid var(--hud-border-gold);
-    border-radius: 6px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(201, 162, 39, 0.12);
-    min-width: min(96vw, 720px);
+    justify-content: center;
+    padding-top: 10px;
+    border-top: 1px solid rgba(139, 105, 20, 0.25);
+    flex-wrap: nowrap;
+    gap: 10px;
 }
 
 #hud-hero-block {
@@ -178,6 +213,8 @@
     gap: 12px;
     align-items: flex-start;
     flex-shrink: 0;
+    width: 100%;
+    min-width: 0;
 }
 
 #hud-portrait {
@@ -219,7 +256,8 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    min-width: 200px;
+    min-width: 0;
+    flex: 1;
 }
 
 #hud-hero-name {
@@ -339,26 +377,34 @@
 #hud-abilities-row {
     display: flex;
     align-items: flex-end;
-    gap: 8px;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
 }
 
 .ability-slot {
     position: relative;
     width: var(--hud-slot-size);
-    height: var(--hud-slot-size);
+    height: calc(var(--hud-slot-size) + 14px);
     border: 2px solid var(--hud-border-subtle);
     border-radius: 4px;
-    background: linear-gradient(160deg, rgba(12, 24, 14, 0.95), rgba(3, 7, 4, 0.9));
+    background: linear-gradient(160deg, rgba(12, 24, 14, 0.82), rgba(3, 7, 4, 0.75));
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     overflow: hidden;
     flex-shrink: 0;
+    padding: 3px 2px 2px;
+    box-sizing: border-box;
 }
 
 .ability-slot.ult {
     width: var(--hud-ult-slot-size);
-    height: var(--hud-ult-slot-size);
+    height: calc(var(--hud-ult-slot-size) + 14px);
     border-color: var(--hud-border-gold);
 }
 
@@ -370,13 +416,30 @@
     border-color: rgba(122, 138, 114, 0.5);
 }
 
+.ability-icon-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 28px;
+    z-index: 1;
+}
+
 .ability-icon {
-    font-family: var(--hud-font-display);
-    font-size: 14px;
+    font-family: var(--hud-font-body);
+    font-size: 10px;
     font-weight: 700;
     color: var(--hud-text-primary);
-    z-index: 1;
     pointer-events: none;
+    text-align: center;
+    line-height: 1.15;
+    max-width: 94%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .ability-slot.ult .ability-icon {
@@ -432,26 +495,39 @@
 }
 
 .ability-name {
-    position: absolute;
-    bottom: -16px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
+    bottom: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
     font-size: 8px;
-    letter-spacing: 0.04em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     color: var(--hud-text-secondary);
     white-space: nowrap;
-    max-width: 72px;
     overflow: hidden;
     text-overflow: ellipsis;
     pointer-events: none;
+    text-align: center;
+    line-height: 1.2;
+    padding: 2px 1px 0;
+    background: rgba(0, 0, 0, 0.45);
+    border-top: 1px solid rgba(139, 105, 20, 0.2);
+    z-index: 2;
+}
+
+.ability-slot.cast-flash {
+    border-color: var(--hud-border-gold);
+    box-shadow: 0 0 18px rgba(201, 162, 39, 0.75);
 }
 
 #hud-inventory {
     display: flex;
     gap: 8px;
     align-items: flex-end;
-    margin-left: 4px;
-    padding-left: 12px;
+    flex-shrink: 0;
+    padding-left: 10px;
+    margin-left: 2px;
     border-left: 1px solid var(--hud-border-subtle);
 }
 
@@ -593,6 +669,71 @@
     inset: 0;
     pointer-events: none;
     z-index: 5;
+}
+
+@media (max-width: 720px) {
+    #creep-info {
+        max-width: calc(100vw - 200px);
+        font-size: 12px;
+    }
+
+    #hud-top-right {
+        top: 12px;
+        right: 12px;
+    }
+
+    #minimap, #minimap-wrap {
+        width: 140px;
+        height: 140px;
+    }
+
+    #minimap {
+        width: 140px;
+        height: 140px;
+    }
+
+    #hud-blight {
+        min-width: 140px;
+        font-size: 10px;
+    }
+
+    :root {
+        --hud-slot-size: 46px;
+        --hud-ult-slot-size: 52px;
+    }
+
+    .hud-bar-row.hud-bar-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    #hud-inventory {
+        border-left: none;
+        padding-left: 0;
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
+        padding-top: 6px;
+        border-top: 1px solid rgba(139, 105, 20, 0.15);
+    }
+}
+
+@media (max-width: 480px) {
+    #creep-info {
+        top: auto;
+        bottom: calc(var(--hud-safe-bottom) + 200px);
+        left: 8px;
+        max-width: calc(50vw - 12px);
+    }
+
+    #hud-action-bar {
+        width: 98vw;
+        padding: 10px 10px 12px;
+    }
+
+    #hud-hero-block {
+        width: 100%;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

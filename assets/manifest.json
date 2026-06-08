@@ -1,4 +1,6 @@
 {
+  "useSprites": false,
+  "_comment": "PNG sheets are dev placeholders (colored circles). Procedural dark-fantasy renderers are used until real art ships.",
   "heroes": {
     "Warrior": {
       "sheet": "heroes/warrior.png",

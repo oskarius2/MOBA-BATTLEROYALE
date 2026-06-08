@@ -29,7 +29,9 @@ const MENU_STYLES = `
         display: flex;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(ellipse at 50% 20%, rgba(18, 42, 24, 0.98) 0%, rgba(3, 7, 4, 0.99) 50%, #010302 100%);
+        background: linear-gradient(165deg, rgba(5, 15, 8, 0.58) 0%, rgba(3, 7, 4, 0.72) 55%, rgba(1, 3, 2, 0.82) 100%);
+        backdrop-filter: blur(18px) saturate(1.25);
+        -webkit-backdrop-filter: blur(18px) saturate(1.25);
         pointer-events: auto;
         opacity: 1;
         visibility: visible;
@@ -44,11 +46,32 @@ const MENU_STYLES = `
         pointer-events: none;
     }
 
+    .menu-bg-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(201, 162, 39, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(201, 162, 39, 0.05) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+        -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 85%);
+        pointer-events: none;
+        opacity: 0.65;
+    }
+
     .menu-vignette {
         position: absolute;
         inset: 0;
-        background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.7) 100%);
+        background: radial-gradient(ellipse at center, transparent 35%, rgba(0, 0, 0, 0.55) 100%);
         pointer-events: none;
+    }
+
+    .welcome-center {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
     }
 
     .menu-ember-layer {

@@ -158,8 +158,8 @@ function withOrientation(ctx, x, y, angle, drawFn) {
 // ─── TERRAIN ─────────────────────────────────────────────────
 
 // (WORLD-SPACE — anropas inuti camera-translate)
-export function drawForestBackground(ctx, camera, viewW, viewH) {
-    drawGroundLayer(ctx, camera, viewW, viewH);
+export function drawForestBackground(ctx, camera, viewW, viewH, time = 0) {
+    drawGroundLayer(ctx, camera, viewW, viewH, time);
 }
 
 let visualAnimationTick = 0;
@@ -173,21 +173,13 @@ export function drawTerrainBiomes(ctx, camera, canvasW, canvasH, deltaTime) {
     const viewMinY = camera.y - 200;
     const viewMaxY = camera.y + canvasH + 200;
 
-    if (viewMinY < 4400 && viewMaxY > 4000) {
+    if (viewMinY < 4450 && viewMaxY > 3950) {
         ctx.save();
-        ctx.globalAlpha  = 0.2;
-        ctx.strokeStyle  = `hsl(180, 70%, ${40 + Math.sin(visualAnimationTick * 3) * 15}%)`;
-        ctx.lineWidth    = 2;
-        const renderStartY = Math.max(4000, viewMinY);
-        const renderHeight = Math.min(4400, viewMaxY) - renderStartY;
-        for (let yStep = renderStartY; yStep < renderStartY + renderHeight; yStep += 35) {
-            const currentOffset = Math.cos(yStep / 150 + visualAnimationTick * 2) * 60;
-            ctx.beginPath();
-            for (let xStep = viewMinX - 60; xStep < viewMaxX + 60; xStep += 80) {
-                ctx.moveTo(xStep + currentOffset, yStep);
-                ctx.lineTo(xStep + currentOffset + 40, yStep + 4);
-            }
-            ctx.stroke();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = '#1a3020';
+        for (const shoreY of [3995, 4405]) {
+            if (shoreY < viewMinY - 20 || shoreY > viewMaxY + 20) continue;
+            ctx.fillRect(Math.max(180, viewMinX), shoreY - 8, Math.min(5820, viewMaxX) - Math.max(180, viewMinX), 16);
         }
         ctx.restore();
     }
@@ -646,7 +638,7 @@ export function drawHeroPyromancer(ctx, x, y, angle, speed = 0, time = 0) {
     const pulse   = 0.5 + 0.5 * Math.sin(time * 0.005);
     const robeLen = 20;
     const shoulderW = 14;
-    drawRuneGlow(ctx, x, y - 8, 38 + pulse * 6, time, 'rgba(0,220,255,0.7)', 'rgba(0,140,180,0.35)');
+    drawRuneGlow(ctx, x, y - 8, 38 + pulse * 6, time, 'rgba(201,162,39,0.55)', 'rgba(139,105,20,0.25)');
     withOrientation(ctx, x, y, angle, (c) => {
         c.beginPath();
         c.moveTo(robeLen, 0); c.lineTo(-robeLen * 0.6, shoulderW);
@@ -656,23 +648,23 @@ export function drawHeroPyromancer(ctx, x, y, angle, speed = 0, time = 0) {
         c.strokeStyle = '#3a2860'; c.lineWidth = 2; c.stroke();
         c.beginPath(); c.arc(6, 0, 7, 0, Math.PI * 2);
         c.fillStyle = '#2a1848'; c.fill();
-        c.beginPath(); c.arc(8, -2, 2.5, 0, Math.PI * 2); c.fillStyle = '#00e5ff'; c.fill();
-        c.beginPath(); c.arc(8,  2, 2.5, 0, Math.PI * 2); c.fillStyle = '#00e5ff'; c.fill();
+        c.beginPath(); c.arc(8, -2, 2.5, 0, Math.PI * 2); c.fillStyle = '#e8721a'; c.fill();
+        c.beginPath(); c.arc(8,  2, 2.5, 0, Math.PI * 2); c.fillStyle = '#c9a227'; c.fill();
         c.beginPath(); c.moveTo(robeLen + 4, 0); c.lineTo(robeLen + 18, 0);
         c.strokeStyle = '#5a4080'; c.lineWidth = 3; c.stroke();
         const staffTip = robeLen + 18;
-        drawGlowRing(c, staffTip, 0, 4, '#00e5ff', 1, 4);
+        drawGlowRing(c, staffTip, 0, 4, '#c9a227', 1, 4);
         c.beginPath(); c.arc(staffTip, 0, 4 + pulse * 2, 0, Math.PI * 2);
-        c.fillStyle = `rgba(0,229,255,${0.6 + pulse * 0.3})`; c.fill();
+        c.fillStyle = `rgba(232,114,26,${0.55 + pulse * 0.25})`; c.fill();
         for (let i = 0; i < 3; i++) {
             const ra = time * 0.003 + i * (Math.PI * 2 / 3);
             c.beginPath(); c.arc(Math.cos(ra) * 16, Math.sin(ra) * 10, 2, 0, Math.PI * 2);
-            c.fillStyle = `rgba(0,200,255,${0.3 + pulse * 0.4})`; c.fill();
+            c.fillStyle = `rgba(201,162,39,${0.25 + pulse * 0.35})`; c.fill();
         }
         if (speed > 0.5) {
             const tl = Math.min(speed * 4, 18);
             c.beginPath(); c.moveTo(-robeLen, 0); c.lineTo(-robeLen - tl, 0);
-            c.strokeStyle = `rgba(0,180,220,${0.25 + pulse * 0.15})`; c.lineWidth = 4; c.stroke();
+            c.strokeStyle = `rgba(139,105,20,${0.25 + pulse * 0.15})`; c.lineWidth = 4; c.stroke();
         }
     });
 }
@@ -770,22 +762,21 @@ export function drawHeroHybrid(ctx, x, y, angle, speed = 0, time = 0) {
 
 // ─── BOT MODEL (WORLD-SPACE) ─────────────────────────────────
 
-const BOT_CLASS_COLORS = {
-    Warrior: '#d4691f', 'Tank-Viking': '#8b4513', Mage: '#6666ff', Ranger: '#66ff66', Hybrid: '#ff66ff',
+const BOT_HERO_RENDERERS = {
+    Warrior:      drawHeroWarrior,
+    Mage:         drawHeroMage,
+    Ranger:       drawHeroRanger,
+    'Tank-Viking':drawHeroViking,
+    Hybrid:       drawHeroHybrid,
 };
 
-export function drawBotModel(ctx, bot) {
+export function drawBotModel(ctx, bot, time = 0) {
     if (!bot?.isAlive) return;
-    const { x, y, radius, facingAngle, heroClass, hp, maxHp } = bot;
-    const fill = BOT_CLASS_COLORS[heroClass] ?? '#999999';
-    ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2);
-    ctx.fillStyle = fill; ctx.fill();
-    ctx.strokeStyle = 'rgba(240,230,200,0.9)'; ctx.lineWidth = 2; ctx.stroke();
-    const al = radius * 1.2;
-    ctx.beginPath(); ctx.moveTo(x, y);
-    ctx.lineTo(x + Math.cos(facingAngle) * al, y + Math.sin(facingAngle) * al);
-    ctx.strokeStyle = 'rgba(255,255,255,0.85)'; ctx.lineWidth = 2; ctx.stroke();
-    drawHpBar(ctx, x, y - radius - 10, radius * 2, 4, maxHp > 0 ? hp / maxHp : 0, '#ff6644');
+    const { x, y, radius, facingAngle, heroClass, hp, maxHp, vx = 0, vy = 0 } = bot;
+    const renderer = BOT_HERO_RENDERERS[heroClass] ?? drawHeroWarrior;
+    const speed = Math.hypot(vx, vy);
+    renderer(ctx, x, y, facingAngle ?? 0, speed, time);
+    drawHpBar(ctx, x, y - radius - 10, radius * 2, 4, maxHp > 0 ? hp / maxHp : 0, '#c0392b');
 }
 
 // ─── MISC ─────────────────────────────────────────────────────
