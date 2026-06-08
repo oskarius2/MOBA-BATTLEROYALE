@@ -14,44 +14,92 @@ import { ABILITY_CONFIG } from './balance-config.js';
 
 export { ABILITY_CONFIG };
 
+class Particle {
+    constructor() {
+        this.active = false;
+        this.x = 0;
+        this.y = 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.size = 0;
+        this.lifeRemaining = 0;
+        this.maxLife = 0;
+        this.color = '';
+    }
+
+    init(x, y, vx, vy, size, life, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.size = size;
+        this.lifeRemaining = life;
+        this.maxLife = life;
+        this.color = color;
+        this.active = true;
+    }
+
+    update(deltaTime) {
+        if (!this.active) return false;
+        
+        this.lifeRemaining -= deltaTime;
+        if (this.lifeRemaining <= 0) {
+            this.active = false;
+            return true; // Just died
+        }
+
+        // Apply friction drag vectors symmetrically
+        this.vx *= 0.96;
+        this.vy *= 0.96;
+        this.x += this.vx * deltaTime * 60;
+        this.y += this.vy * deltaTime * 60;
+        return false;
+    }
+}
+
 export class ParticleSystem {
     constructor() {
+        this.MAX_PARTICLES = 500;
         this.particles = [];
-        this.MAX_PARTICLES = 400;
-    }
-    addParticle(x, y, vx, vy, size, life, color) {
-        if (this.particles.length >= this.MAX_PARTICLES) return;
-        this.particles.push({ x, y, vx, vy, size, lifeRemaining: life, maxLife: life, color });
-    }
-    update(deltaTime) {
-        let i = this.particles.length;
-        while (i--) {
-            const p = this.particles[i];
-            p.lifeRemaining -= deltaTime;
-            if (p.lifeRemaining <= 0) {
-                this.particles.splice(i, 1);
-                continue;
-            }
-            p.vx *= 0.96;
-            p.vy *= 0.96;
-            p.x += p.vx * deltaTime * 60;
-            p.y += p.vy * deltaTime * 60;
+        // Pre-allocate all particle entities in memory to prevent runtime GC spikes
+        for (let i = 0; i < this.MAX_PARTICLES; i++) {
+            this.particles.push(new Particle());
         }
     }
+
+    addParticle(x, y, vx, vy, size, life, color) {
+        // Search for the first available inactive slot in our pool
+        for (let i = 0; i < this.MAX_PARTICLES; i++) {
+            if (!this.particles[i].active) {
+                this.particles[i].init(x, y, vx, vy, size, life, color);
+                return;
+            }
+        }
+    }
+
+    update(deltaTime) {
+        for (let i = 0; i < this.MAX_PARTICLES; i++) {
+            if (this.particles[i].active) {
+                this.particles[i].update(deltaTime);
+            }
+        }
+    }
+
     draw(ctx, camera, viewW = 1920, viewH = 1080) {
         ctx.save();
-        let i = this.particles.length;
-        while (i--) {
+        for (let i = 0; i < this.MAX_PARTICLES; i++) {
             const p = this.particles[i];
+            if (!p.active) continue;
 
             const screenX = p.x - camera.x;
             const screenY = p.y - camera.y;
 
+            // Viewport Culling Check: Skip drawing if particle is off-screen
             if (screenX < -50 || screenX > viewW + 50 || screenY < -50 || screenY > viewH + 50) {
                 continue;
             }
 
-            const opacity = p.lifeRemaining / p.maxLife;
+            const opacity = Math.max(0, p.lifeRemaining / p.maxLife);
             ctx.globalAlpha = opacity * 0.8;
             ctx.beginPath();
             ctx.arc(screenX, screenY, p.size * opacity, 0, Math.PI * 2);
@@ -65,8 +113,18 @@ export class ParticleSystem {
 export const GlobalParticles = new ParticleSystem();
 
 export function getTerrainType(x, y) {
-    // Riverbed cutting through the jungle between Y: 4000 and 4400
+    // 1. The Winding Riverbed (Y: 4000 to 4400 cuts horizontally across map)
     if (y > 4000 && y < 4400 && x > 200 && x < 5800) return 'WATER';
+    
+    // 2. The Blighted Woods (Top-Right Zone quadrant: X > 4500 and Y < 1500)
+    if (x > 4500 && y < 1500) return 'BLIGHTED';
+    
+    // 3. Dense Brush clusters (Simulated specific localized foliage points)
+    // Checking tactical proxy zones around riverbanks
+    if (Math.hypot(x - 1200, y - 4100) < 60 || Math.hypot(x - 2800, y - 3950) < 50) {
+        return 'BRUSH';
+    }
+
     return 'GRASS';
 }
 
@@ -805,8 +863,12 @@ export function resetAbilityState() {
     CooldownState.w = 0;
     CooldownState.e = 0;
     ActiveAbilityEffects.length = 0;
-    GlobalParticles.particles.length = 0;
     projectileIdCounter = 0;
+    
+    // Safely reset object pool states
+    if (GlobalParticles && GlobalParticles.particles) {
+        GlobalParticles.particles.forEach(p => p.active = false);
+    }
 }
 
 const AbilityEngine = {
