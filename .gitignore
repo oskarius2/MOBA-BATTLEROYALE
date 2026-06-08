@@ -1,0 +1,16 @@
+# Systemfiler (skräp från Windows/Mac)
+Thumbs.db
+.DS_Store
+
+# Loggar och temporära filer
+*.log
+npm-debug.log*
+
+# Om du skulle köra npm/Node i framtiden (lika bra att ha med)
+node_modules/
+dist/
+.env
+
+# Editor-specifikt skräp (Cursor/VS Code-inställningar)
+.vscode/
+.cursor/

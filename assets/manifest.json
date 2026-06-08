@@ -1,0 +1,47 @@
+{
+  "heroes": {
+    "Warrior": {
+      "sheet": "heroes/warrior.png",
+      "frameSize": 128,
+      "framesPerAction": 6
+    },
+    "Mage": {
+      "sheet": "heroes/mage.png",
+      "frameSize": 128,
+      "framesPerAction": 6
+    },
+    "Ranger": {
+      "sheet": "heroes/ranger.png",
+      "frameSize": 128,
+      "framesPerAction": 6
+    },
+    "Tank-Viking": {
+      "sheet": "heroes/viking.png",
+      "frameSize": 128,
+      "framesPerAction": 6
+    },
+    "Hybrid": {
+      "sheet": "heroes/hybrid.png",
+      "frameSize": 128,
+      "framesPerAction": 6,
+      "stances": ["MELEE", "RANGED"]
+    }
+  },
+  "creeps": {
+    "scout": {
+      "sheet": "creeps/scout.png",
+      "frameSize": 96,
+      "framesPerAction": 4
+    },
+    "warrior": {
+      "sheet": "creeps/warrior.png",
+      "frameSize": 96,
+      "framesPerAction": 4
+    },
+    "ancient": {
+      "sheet": "creeps/ancient.png",
+      "frameSize": 96,
+      "framesPerAction": 4
+    }
+  }
+}

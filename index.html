@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Moba Battle Royale — Dark Jungle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="ui/hud-tokens.css">
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030704;
+            font-family: 'Montserrat', 'Segoe UI', sans-serif;
+            color: #d4cfc4;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: none;
+            background-color: #030704;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="hud-overlay">
+        <div id="creep-info" class="hud-panel">
+            <div class="hud-label">Battlefield</div>
+            <div>Active Camps <span class="hud-value" id="creeps-count">4</span></div>
+            <div style="margin-top:6px;">Enemies <span class="hud-value" id="alive-counter">0</span></div>
+        </div>
+
+        <div id="hud-top-right">
+            <div id="minimap-wrap">
+                <canvas id="minimap" width="168" height="168" aria-label="Minimap"></canvas>
+            </div>
+            <div id="hud-blight" aria-live="polite">
+                <div class="blight-safe">Safe zone edge</div>
+                <div class="blight-distance">—</div>
+            </div>
+        </div>
+
+        <div id="hud-action-bar">
+            <div id="hud-hero-block">
+                <div id="hud-portrait" aria-label="Hero portrait">M
+                    <span id="hud-level-badge" aria-hidden="true">1</span>
+                </div>
+                <div id="hud-stats-col">
+                    <div id="hud-hero-name">Champion</div>
+                    <div class="hud-bar-wrap" id="health-bar-container">
+                        <div class="hud-bar-fill" id="health-bar"></div>
+                        <span class="hud-bar-text" id="health-bar-text">100 / 100</span>
+                    </div>
+                    <div class="hud-bar-wrap xp" id="xp-bar-container">
+                        <div class="hud-bar-fill" id="xp-bar"></div>
+                        <span class="hud-bar-text" id="xp-bar-text">0 / 100</span>
+                    </div>
+                    <div id="hud-gold-row">Gold <span class="hud-value" id="hud-gold-value">0</span></div>
+                    <div id="hud-buffs" aria-label="Active buffs"></div>
+                </div>
+            </div>
+
+            <div id="hud-abilities-row">
+                <div class="ability-slot basic ready" data-slot="aa" aria-label="Basic attack, ready">
+                    <span class="ability-key">LMB</span>
+                    <div class="ability-icon">AA</div>
+                    <div class="ability-cd-ring"></div>
+                    <span class="ability-timer"></span>
+                    <span class="ability-name">Attack</span>
+                </div>
+                <div class="ability-slot ready" data-slot="q" aria-label="Skill 1, ready">
+                    <span class="ability-key">1</span>
+                    <div class="ability-icon">Q</div>
+                    <div class="ability-cd-ring"></div>
+                    <span class="ability-timer"></span>
+                    <span class="ability-name">Skill 1</span>
+                </div>
+                <div class="ability-slot ready" data-slot="w" aria-label="Skill 2, ready">
+                    <span class="ability-key">2</span>
+                    <div class="ability-icon">W</div>
+                    <div class="ability-cd-ring"></div>
+                    <span class="ability-timer"></span>
+                    <span class="ability-name">Skill 2</span>
+                </div>
+                <div class="ability-slot ult ready" data-slot="e" aria-label="Ultimate, ready">
+                    <span class="ability-key">3</span>
+                    <div class="ability-icon">E</div>
+                    <div class="ability-cd-ring"></div>
+                    <span class="ability-timer"></span>
+                    <span class="ability-name">Ult</span>
+                </div>
+            </div>
+
+            <div id="hud-inventory">
+                <div class="item-slot" id="slot-1" aria-label="Inventory slot 1">—</div>
+                <div class="item-slot" id="slot-2" aria-label="Inventory slot 2">—</div>
+                <div class="item-slot" id="slot-3" aria-label="Inventory slot 3">—</div>
+            </div>
+        </div>
+
+        <span id="player-level" class="sr-only" aria-hidden="true">1</span>
+        <span id="player-gold" class="sr-only" aria-hidden="true">0</span>
+        <span id="xp-text" class="sr-only" aria-hidden="true">0/100</span>
+
+        <div id="level-up-flash" aria-live="polite">Level Up</div>
+
+        <div id="game-over-screen" role="dialog" aria-labelledby="game-over-title">
+            <h1 id="game-over-title">Fallen</h1>
+            <p>The dark jungle claims another soul.</p>
+            <button type="button" id="game-over-button" onclick="resetGame()">Return to Selection</button>
+        </div>
+    </div>
+
+    <div id="class-select-overlay">
+        <div class="menu-vignette" aria-hidden="true"></div>
+        <div class="menu-ember-layer" aria-hidden="true"></div>
+        <div class="menu-shimmer" aria-hidden="true"></div>
+
+        <div class="menu-shell">
+            <nav class="menu-breadcrumb hidden" id="menu-breadcrumb" aria-label="Menu progress">
+                <span class="crumb done" data-step="play">Play</span>
+                <span class="crumb-sep" aria-hidden="true">→</span>
+                <span class="crumb active" data-step="class">Pick Class</span>
+                <span class="crumb-sep" aria-hidden="true">→</span>
+                <span class="crumb" data-step="go">GO</span>
+            </nav>
+
+            <!-- Welcome -->
+            <section class="menu-stage welcome-stage active" id="menu-stage-welcome">
+                <div class="welcome-glow-ring" aria-hidden="true"></div>
+                <span class="welcome-pre">Welcome to</span>
+                <div class="welcome-brand" id="welcome-brand" aria-label="MOBROYALE"></div>
+                <p class="welcome-tagline">Dark Jungle · Last Hero Standing</p>
+                <button type="button" class="glass-btn glass-btn-primary welcome-continue" id="welcome-continue-btn">
+                    Enter
+                </button>
+            </section>
+
+            <!-- Main menu -->
+            <section class="menu-stage" id="menu-stage-main">
+                <h1 class="main-logo">MobRoyale</h1>
+                <p class="main-subtitle">Battle Royale in the Dark Jungle</p>
+                <div class="main-menu-buttons">
+                    <button type="button" class="glass-btn glass-btn-primary" id="btn-play">Play</button>
+                    <button type="button" class="glass-btn" id="btn-classes">Classes</button>
+                    <button type="button" class="glass-btn" id="btn-settings">Settings</button>
+                </div>
+            </section>
+
+            <!-- Class select -->
+            <section class="menu-stage" id="menu-stage-class-select">
+                <header class="class-stage-header">
+                    <h2>Pick Your Class</h2>
+                    <p>Choose your path into the forest</p>
+                </header>
+                <div class="menu-body">
+                    <div class="hero-card-grid" id="hero-card-grid" role="listbox" aria-label="Hero selection"></div>
+                    <aside class="hero-details-pane" id="hero-details-pane" aria-live="polite">
+                        <div class="details-empty">Select a champion<br>to begin</div>
+                    </aside>
+                </div>
+                <footer class="class-stage-footer">
+                    <button type="button" class="glass-btn glass-btn-back" id="btn-class-back">← Back</button>
+                    <button type="button" class="glass-btn glass-btn-go" id="enter-forest-btn">GO</button>
+                </footer>
+            </section>
+
+            <!-- Settings -->
+            <section class="menu-stage" id="menu-stage-settings">
+                <div class="settings-panel">
+                    <h2>Settings</h2>
+                    <div class="settings-row">
+                        <span>Master Volume</span>
+                        <button type="button" class="settings-toggle on" aria-label="Toggle master volume"></button>
+                    </div>
+                    <div class="settings-row">
+                        <span>Screen Shake</span>
+                        <button type="button" class="settings-toggle on" aria-label="Toggle screen shake"></button>
+                    </div>
+                    <div class="settings-row">
+                        <span>Show Damage Numbers</span>
+                        <button type="button" class="settings-toggle" aria-label="Toggle damage numbers"></button>
+                    </div>
+                    <button type="button" class="glass-btn glass-btn-back" id="btn-settings-back" style="width:100%;margin-top:8px;">← Back</button>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+// ============================================================
+// index.html — Bootstrap (tunna ~60 rader)
+// All spellogik bor nu i separata moduler under core/ och ui/.
+//
+// Mappstruktur:
+//   core/balance-config.js     — single source of truth (siffror)
+//   core/balance-validator.js  — kör i konsolen för att validera balans
+//   core/ability-engine.js     — abilities, projektiler, partiklar
+//   core/canvas-renderer.js    — all rendering
+//   core/economy-engine.js     — gold, loot, pity
+//   core/camera.js             — kamera och koordinater
+//   core/inventory.js          — item-pickup och shop-köp
+//   core/input.js              — tangentbord och mus
+//   core/game-loop.js          — update + render + gameState
+//   core/game-init.js          — bootstrap, setupCreeps, applyHeroConfig
+//   core/entities/player.js    — Player-klassen
+//   core/entities/creep.js     — Creep-klassen
+//   core/entities/projectile.js— Projectile-klassen
+//   core/entities/item.js      — DroppedItem-klassen
+//   core/world/blight.js       — Blight-zone (storm)
+//   data/balance-config.js     — siffror (re-exporteras via core/)
+//   data/hero-roster.js        — hjältedefinitioner
+//   data/shop-catalog.js       — 15 shop-items
+//   data/world-config.js       — creep-typer, camp-positioner, Blight
+//   ui/hud.js                  — HUD-uppdatering
+//   ui/shop-interface.js       — shop-UI
+//   ui/menu-interface.js       — meny-system
+// ============================================================
+
+import { Player }          from './core/entities/player.js';
+import { initInput, keysPressed, pointerWorld } from './core/input.js';
+import { camera, getWorldCoordinates, updateCamera } from './core/camera.js';
+import { buyItem }         from './core/inventory.js';
+import { setGameLoopRefs, setKeysRef, gameState } from './core/game-loop.js';
+import { setGameInitRefs, initializeGame, applyHeroConfig, showGameOver, resetGame, getPlayerClass, ensureSpritesLoaded } from './core/game-init.js';
+import { showLevelUpFlash, markHudDirty } from './ui/hud.js';
+import { toggleShopUI, isShopOpen, updateShopUI } from './ui/shop-interface.js';
+import { initHeroSelectMenu, showClassSelectMenu, selectHero, buildWelcomeLetters } from './ui/menu-interface.js';
+import { initForestEnvironment } from './core/canvas-renderer.js';
+import AbilityEngine, { CooldownState } from './core/ability-engine.js';
+import { SHOP_CATALOG }    from './data/shop-catalog.js';
+import { HERO_ROSTER }     from './data/hero-roster.js';
+import { calculateItemCost } from './core/economy-engine.js';
+import { gameLoop, Projectiles, Creeps, onViewportResize } from './core/game-loop.js';
+
+// ─── CANVAS ───────────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+canvas.width  = window.innerWidth;
+canvas.height = window.innerHeight;
+const ctx = canvas.getContext('2d');
+
+let VIEWPORT_WIDTH  = window.innerWidth;
+let VIEWPORT_HEIGHT = window.innerHeight;
+
+// ─── PLAYER ───────────────────────────────────────────────────
+const PlayerInstance = new Player(3000, 3000);
+
+// Callbacks injicerade utan cirkulära imports
+PlayerInstance.getPointer = () => pointerWorld;
+PlayerInstance.onDeath    = () => showGameOver();
+PlayerInstance.onLevelUp  = () => showLevelUpFlash();
+
+// ─── KOPPLA IHOP MODULERNA ────────────────────────────────────
+setGameInitRefs({
+    player:      PlayerInstance,
+    getViewport: () => ({ width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT }),
+});
+
+setGameLoopRefs({
+    player:         PlayerInstance,
+    canvas,
+    ctx,
+    getViewport:    () => ({ width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT }),
+    getPlayerClass,
+});
+
+setKeysRef(() => keysPressed);
+
+// ─── INPUT ────────────────────────────────────────────────────
+initInput(canvas, {
+    getCamera:     () => camera,
+    getWorldCoords:(e, c) => getWorldCoordinates(e, c),
+    isShopOpen,
+    onShopToggle:  () => toggleShopUI(),
+    onBasicAttack: () => AbilityEngine.basicAttack(PlayerInstance, pointerWorld, Projectiles, Creeps),
+    onAbility: (slot) => {
+        const ok = AbilityEngine.cast(slot, PlayerInstance, pointerWorld, Projectiles, Creeps);
+        if (ok) markHudDirty();
+    },
+});
+
+// ─── WINDOW-EVENTS ────────────────────────────────────────────
+window.addEventListener('resize', () => {
+    canvas.width   = window.innerWidth;
+    canvas.height  = window.innerHeight;
+    VIEWPORT_WIDTH  = window.innerWidth;
+    VIEWPORT_HEIGHT = window.innerHeight;
+    updateCamera(PlayerInstance, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+    onViewportResize();
+    if (gameState.selectedClass) {
+        updateShopUI(SHOP_CATALOG, getPlayerClass(), calculateItemCost);
+    }
+});
+
+// ─── GLOBALS FÖR HTML ONCLICK-HANDLERS ───────────────────────
+window.resetGame  = () => resetGame(showClassSelectMenu);
+window.toggleMenu = toggleShopUI;
+window.selectHero = (heroKey) => selectHero(heroKey, HERO_ROSTER);
+window.buyItem    = (itemId) => buyItem(itemId, getPlayerClass(), gameState, PlayerInstance, markHudDirty);
+
+// ─── ONLOAD ───────────────────────────────────────────────────
+window.onload = () => {
+    buildWelcomeLetters();
+    ensureSpritesLoaded();
+    initHeroSelectMenu(HERO_ROSTER, async (heroKey) => {
+        await ensureSpritesLoaded();
+        applyHeroConfig(heroKey);
+        initializeGame();
+    });
+    initForestEnvironment(6000, 6000, 300);
+    showClassSelectMenu({ skipWelcome: false });
+};
+</script>
+
+</body>
+</html>

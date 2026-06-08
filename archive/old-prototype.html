@@ -1,0 +1,1015 @@
+<html lang="sv">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>System Simulation Client</title>
+
+    <style>
+
+        body {
+
+            margin: 0;
+
+            background-color: #111;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            height: 100vh;
+
+            overflow: hidden;
+
+            font-family: 'Courier New', monospace;
+
+        }
+
+        #gameCanvas {
+
+            background-color: #000;
+
+            border: 2px solid #00FFFF; /* Cyan Neon Border */
+
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.6);
+
+        }
+
+        #hud {
+
+            position: absolute;
+
+            top: 10px;
+
+            left: 50%;
+
+            transform: translateX(-50%);
+
+            color: #AAFF00; /* Neon Green Text */
+
+            padding: 10px 20px;
+
+            background-color: rgba(0, 0, 0, 0.7);
+
+            border: 1px solid #00FFFF;
+
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+
+            z-index: 10;
+
+        }
+
+        #healthBarContainer {
+
+            width: 200px;
+
+            height: 20px;
+
+            background-color: #440000;
+
+            border: 1px solid #FF0000;
+
+            margin-bottom: 5px;
+
+        }
+
+        #healthBar {
+
+            width: 100%;
+
+            height: 100%;
+
+            background-color: #ff4444;
+
+            transition: width 0.2s ease-out;
+
+        }
+
+        #inventory {
+
+            display: flex;
+
+            gap: 5px;
+
+            margin-top: 10px;
+
+        }
+
+        .item-slot {
+
+            width: 40px;
+
+            height: 40px;
+
+            border: 2px solid #333;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            font-size: 1.5em;
+
+            text-shadow: 0 0 5px #fff;
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+
+    <canvas id="gameCanvas" width="1500" height="1500"></canvas>
+
+
+
+    <div id="hud">
+
+        <div>
+
+            System Status: Player Life Counter (20/20)
+
+            <br><span id="healthBarContainer"><div id="healthBar"></div></span> Health
+
+        </div>
+
+        <div id="inventory">
+
+            <div class="item-slot" id="slot1">[Empty]</div>
+
+            <div class="item-slot" id="slot2">[Empty]</div>
+
+            <div class="item-slot" id="slot3">[Empty]</div>
+
+        </div>
+
+    </div>
+
+
+
+    <script>
+
+        // --- CONSTANTS AND INITIAL SETUP ---
+
+        const CANVAS_WIDTH = 1500;
+
+        const CANVAS_HEIGHT = 1500;
+
+        const PLAYER_SPEED = 6;
+
+        const PROJECTILE_SPEED = 20;
+
+        const STAGE_SIZE = { width: CANVAS_WIDTH, height: CANVAS_HEIGHT };
+
+
+
+        // Canvas Setup
+
+        const canvas = document.getElementById('gameCanvas');
+
+        canvas.width = CANVAS_WIDTH;
+
+        canvas.height = CANVAS_HEIGHT;
+
+        const ctx = canvas.getContext('2d');
+
+
+
+        // Game State Variables
+
+        let lastTimestamp = 0;
+
+        let isRunning = true;
+
+
+
+        // --- OBJECT DEFINITIONS ---
+
+
+
+        // Player Object (The Hero)
+
+        let player = {
+
+            x: CANVAS_WIDTH / 2,
+
+            y: CANVAS_HEIGHT / 2,
+
+            radius: 15,
+
+            health: 100,
+
+            maxHealth: 100,
+
+            speed: PLAYER_SPEED,
+
+            inventory: ['', '', ''] // Slots 1, 2, 3
+
+        };
+
+
+
+        // Projectile Array
+
+        let projectiles = [];
+
+        const PROJECTILE_COOLDOWN = 300; // ms
+
+        let lastFireTime = 0;
+
+
+
+        // Storm Object (The Map & The Storm)
+
+        let storm = {
+
+            center: { x: CANVAS_WIDTH / 2, y: CANVAS_HEIGHT / 2 },
+
+            radius: Math.min(CANVAS_WIDTH, CANVAS_HEIGHT) * 0.95, // Starts large
+
+            shrinkRate: 0.1, // Pixels per update cycle
+
+            damageRate: 5, // Damage over time
+
+            isShrinking: true
+
+        };
+
+
+
+        // Monster/NPC Camp Definitions (Dota 2 Style)
+
+        let creeps = [];
+
+        const MAX_CREEPS = 6;
+
+        function createCreep(x, y, maxHp, radius) {
+
+            return {
+
+                x: x,
+
+                y: y,
+
+                radius: radius,
+
+                maxHp: maxHp,
+
+                currentHp: maxHp,
+
+                isAlive: true,
+
+                targetDistance: 100 // Range for drawing target indicator
+
+            };
+
+        }
+
+
+
+        function spawnInitialCreeps() {
+
+            // Spawn in clusters away from the center
+
+            creeps.push(createCreep(200, 200, 80, 10));
+
+            creeps.push(createCreep(200, 450, 60, 10));
+
+            creeps.push(createCreep(350, 700, 90, 12));
+
+
+
+            creeps.push(createCreep(800, 300, 70, 10));
+
+            creeps.push(createCreep(1100, 600, 50, 8));
+
+            creeps.push(createCreep(950, 900, 85, 12));
+
+        }
+
+        spawnInitialCreeps();
+
+
+
+        // Item Spawning & Management (Loot)
+
+        let items = [];
+
+        const ITEM_TYPES = {
+
+            PURPLE: { name: 'Weapon', value: 3 }, // Epic Weapon
+
+            GOLD:   { name: 'Armor', value: 2 }  // Legendary Armor
+
+        };
+
+
+
+        function spawnItem(x, y, type) {
+
+            items.push({ x: x, y: y, type: type, isCollected: false });
+
+        }
+
+
+
+
+
+        // --- INPUT HANDLERS AND CONTROL LOGIC (The Hero) ---
+
+        let keys = {};
+
+        window.addEventListener('keydown', (e) => { keys[e.key] = true; });
+
+        window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+
+
+
+        // Mouse Aiming and Projectile Firing
+
+        canvas.addEventListener('mousedown', (e) => {
+
+            const rect = canvas.getBoundingClientRect();
+
+            const mouseX = e.clientX - rect.left;
+
+            const mouseY = e.clientY - rect.top;
+
+
+
+            fireProjectile(player.x, player.y, mouseX, mouseY);
+
+        });
+
+
+
+        function fireProjectile(startX, startY, endX, endY) {
+
+            const currentTime = Date.now();
+
+            if (currentTime - lastFireTime < PROJECTILE_COOLDOWN) return;
+
+            lastFireTime = currentTime;
+
+
+
+            // Calculate direction vector
+
+            const dx = endX - startX;
+
+            const dy = endY - startY;
+
+            const angle = Math.atan2(dy, dx);
+
+
+
+            projectiles.push({
+
+                x: startX + (Math.cos(angle) * 10), // Start slightly away from player
+
+                y: startY + (Math.sin(angle) * 10),
+
+                vx: Math.cos(angle) * PROJECTILE_SPEED,
+
+                vy: Math.sin(angle) * PROJECTILE_SPEED,
+
+                radius: 5,
+
+                damage: 20,
+
+                lifetime: 60 // Frames before auto-removal
+
+            });
+
+        }
+
+
+
+        // Movement Update Function
+
+        function handlePlayerMovement() {
+
+            let dx = 0;
+
+            let dy = 0;
+
+
+
+            if (keys['w'] || keys['ArrowUp']) { dy -= 1; }
+
+            if (keys['s'] || keys['ArrowDown']) { dy += 1; }
+
+            if (keys['a'] || keys['ArrowLeft']) { dx -= 1; }
+
+            if (keys['d'] || keys['ArrowRight']) { dx += 1; }
+
+
+
+            // Normalize diagonal movement speed
+
+            const magnitude = Math.sqrt(dx * dx + dy * dy);
+
+            if (magnitude > 0) {
+
+                dx /= magnitude;
+
+                dy /= magnitude;
+
+            }
+
+
+
+            player.x += dx * player.speed;
+
+            player.y += dy * player.speed;
+
+
+
+            // Boundary constraints (Keeping player within the map bounds for simplicity of camera follow)
+
+            player.x = Math.max(player.radius, Math.min(CANVAS_WIDTH - player.radius, player.x));
+
+            player.y = Math.max(player.radius, Math.min(CANVAS_HEIGHT - player.radius, player.y));
+
+
+
+             // Check for item collection (Collision)
+
+            items.forEach(item => {
+
+                if (!item.isCollected && distance(item.x, item.y, player.x, player.y) < 30) {
+
+                    collectItem(item);
+
+                }
+
+            });
+
+        }
+
+
+
+        // --- CORE SYSTEMS UPDATES ---
+
+
+
+        function updateProjectiles() {
+
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+
+                const p = projectiles[i];
+
+                p.x += p.vx;
+
+                p.y += p.vy;
+
+                p.lifetime--;
+
+
+
+                // Check boundaries and lifespan
+
+                if (p.lifetime <= 0 || Math.abs(p.x - player.x) > CANVAS_WIDTH + 10 || Math.abs(p.y - player.y) > CANVAS_HEIGHT + 10) {
+
+                    projectiles.splice(i, 1);
+
+                    continue;
+
+                }
+
+
+
+                // Check collisions with creeps
+
+                let hit = false;
+
+                for (let j = creeps.length - 1; j >= 0; j--) {
+
+                    const creep = creeps[j];
+
+                    if (!creep.isAlive) continue;
+
+
+
+                    if (distance(p.x, p.y, creep.x, creep.y) < creep.radius + p.radius) {
+
+                        creep.currentHp -= p.damage;
+
+                        hit = true;
+
+                        break; // Projectile destroyed on hit
+
+                    }
+
+                }
+
+
+
+                if (hit) {
+
+                    projectiles.splice(i, 1);
+
+                }
+
+            }
+
+        }
+
+
+
+        function updateStorm(deltaTime) {
+
+            // The storm contracts towards the center point (750, 750)
+
+            const elapsedSeconds = deltaTime / 1000;
+
+
+
+            if (storm.isShrinking && storm.radius > 50) {
+
+                // Exponential decay for radius reduction speed
+
+                let shrinkageAmount = storm.shrinkRate * Math.pow(elapsedSeconds, 0.5);
+
+                
+
+                // Limit the rate of shrinking to ensure it reaches a minimum size quickly
+
+                storm.radius = Math.max(50, storm.radius - shrinkageAmount);
+
+
+
+                // Damage Check: If player is outside the storm boundary
+
+                const distToCenter = distance(player.x, player.y, storm.center.x, storm.center.y);
+
+                if (distToCenter > storm.radius) {
+
+                    player.health -= storm.damageRate * elapsedSeconds; // Damage over time calculation
+
+                    if (player.health < 0) player.health = 0;
+
+                }
+
+            } else if (storm.radius <= 50 && !storm.isShrinking) {
+
+                 // End state reached
+
+            }
+
+        }
+
+
+
+        function updateCreeps() {
+
+            const damageToPlayer = 1; // Small base damage per frame tick if too close
+
+            for (const creep of creeps) {
+
+                if (!creep.isAlive) continue;
+
+
+
+                // Simple pursuit logic: Creep moves towards the player
+
+                let dx = player.x - creep.x;
+
+                let dy = player.y - creep.y;
+
+                let dist = Math.hypot(dx, dy);
+
+
+
+                // If within shooting range (e.g., 200px), engage/attack
+
+                if (dist < 300) {
+
+                    creep.x += (dx / dist) * 1 + 0.5; // Creep movement towards player
+
+                    creep.y += (dy / dist) * 1 + 0.5;
+
+
+
+                    // Direct damage application if collision occurs
+
+                     if (dist < creep.radius + player.radius) {
+
+                        player.health -= damageToPlayer / 30; // Reduced damage per frame cycle
+
+                     }
+
+                } else {
+
+                    // Slow passive movement towards the storm center/random target
+
+                }
+
+
+
+                // Check for death
+
+                if (creep.currentHp <= 0 && creep.isAlive) {
+
+                    creep.isAlive = false;
+
+                    handleCreepDeath(creep);
+
+                }
+
+            }
+
+        }
+
+
+
+        function updateItems() {
+
+             for (let i = items.length - 1; i >= 0; i--) {
+
+                 const item = items[i];
+
+                 // Items remain static until collected
+
+             }
+
+        }
+
+
+
+        // --- UTILITY FUNCTIONS AND HANDLERS ---
+
+
+
+        function distance(x1, y1, x2, y2) {
+
+            return Math.hypot(x1 - x2, y1 - y2);
+
+        }
+
+
+
+        function collectItem(item) {
+
+            if (player.inventory[0] === '' || player.inventory[1] === '' || player.inventory[2] === '') {
+
+                const slotIndex = Math.floor(Math.random() * 3); // Random empty slot
+
+                player.inventory[slotIndex] = item.type;
+
+            } else {
+
+                // If all slots are full, nothing happens
+
+            }
+
+            items.splice(items.indexOf(item), 1); // Remove collected item
+
+        }
+
+
+
+        function handleCreepDeath(creep) {
+
+            const chance = Math.random();
+
+            if (chance < 0.6) { // 60% chance of dropping loot
+
+                const typeKeys = Object.keys(ITEM_TYPES);
+
+                const randomTypeKey = typeKeys[Math.floor(Math.random() * typeKeys.length)];
+
+                spawnItem(creep.x, creep.y, randomTypeKey);
+
+            }
+
+        }
+
+
+
+
+
+        // --- RENDERING FUNCTIONS (The Canvas Drawing) ---
+
+
+
+        function drawPlayer() {
+
+            ctx.beginPath();
+
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+
+            ctx.fillStyle = '#00FF88'; // Neon Green
+
+            ctx.strokeStyle = '#AAFFFF';
+
+            ctx.lineWidth = 3;
+
+            ctx.fill();
+
+            ctx.stroke();
+
+
+
+            // Simple directional indicator (facing cursor logic is handled by fireProjectile aiming)
+
+        }
+
+
+
+        function drawProjectiles() {
+
+            for (const p of projectiles) {
+
+                ctx.beginPath();
+
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+
+                ctx.fillStyle = '#FF4444'; // Red for attack element
+
+                ctx.shadowColor = '#ff4444';
+
+                ctx.shadowBlur = 15;
+
+                ctx.fill();
+
+            }
+
+             // Reset shadow after drawing projectiles
+
+            ctx.shadowBlur = 0;
+
+        }
+
+
+
+        function drawStorm() {
+
+            if (!storm.isShrinking) return;
+
+
+
+            const gradient = ctx.createRadialGradient(
+
+                CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, storm.radius * 0.8,
+
+                CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, storm.radius
+
+            );
+
+
+
+            // Red/Purple pulsing glow effect
+
+            gradient.addColorStop(0, 'rgba(150, 0, 0, 0)');
+
+            gradient.addColorStop(0.7, 'rgba(255, 0, 0, 0.6)');
+
+            gradient.addColorStop(1, 'rgba(255, 0, 0, 0.9)');
+
+
+
+            ctx.fillStyle = gradient;
+
+            ctx.beginPath();
+
+            ctx.arc(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, storm.radius, 0, Math.PI * 2);
+
+            ctx.fill();
+
+        }
+
+
+
+
+
+        function drawCreeps() {
+
+            for (const creep of creeps) {
+
+                if (!creep.isAlive) continue;
+
+
+
+                // Draw body
+
+                ctx.beginPath();
+
+                ctx.arc(creep.x, creep.y, creep.radius, 0, Math.PI * 2);
+
+                ctx.fillStyle = '#AAAAAA'; // Grey for neutral entity
+
+                ctx.strokeStyle = '#666666';
+
+                ctx.lineWidth = 2;
+
+                ctx.fill();
+
+                ctx.stroke();
+
+
+
+                // Draw HP Bar
+
+                const hpRatio = creep.currentHp / creep.maxHp;
+
+                ctx.fillStyle = `rgba(0, ${Math.floor(150 * (1 - hpRatio))}, 255, 0.8)`; // Blue fading to red
+
+                ctx.fillRect(creep.x - creep.radius, creep.y - creep.radius - 10, creep.radius * 2 * hpRatio, 5);
+
+                ctx.strokeStyle = '#FFFFFF';
+
+                ctx.strokeRect(creep.x - creep.radius, creep.y - creep.radius - 10, creep.radius * 2, 5);
+
+            }
+
+        }
+
+
+
+        function drawItems() {
+
+            for (const item of items) {
+
+                if (item.isCollected) continue;
+
+
+
+                ctx.shadowColor = '#FFFFFF';
+
+                ctx.shadowBlur = 10;
+
+
+
+                let color = '';
+
+                if (item.type === 'PURPLE') {
+
+                    color = '#8A2BE2'; // Purple for Weapon
+
+                } else if (item.type === 'GOLD') {
+
+                    color = '#FFD700'; // Gold for Armor
+
+                }
+
+
+
+                ctx.fillStyle = color;
+
+                ctx.beginPath();
+
+                ctx.rect(item.x - 15, item.y - 15, 30, 30);
+
+                ctx.fill();
+
+            }
+
+             ctx.shadowBlur = 0;
+
+        }
+
+
+
+
+
+        // --- UI UPDATER (The HUD overlay) ---
+
+
+
+        function updateHUD() {
+
+            const healthPercent = Math.max(0, player.health / player.maxHealth) * 100;
+
+            document.getElementById('healthBar').style.width = `${healthPercent}%`;
+
+
+
+            // Update Life Counter
+
+            document.querySelector('#hud > div:first-child').innerHTML = 
+
+                `System Status: Player Life Counter (20/20)<br><span id="healthBarContainer"><div id="healthBar" style="background-color: ${healthPercent > 30 ? '#ff4444' : '#880000'}; width: ${healthPercent}%"></div></span> Health`;
+
+
+
+            // Update Inventory Slots
+
+            document.getElementById('slot1').textContent = player.inventory[0] === '' ? '[Empty]' : itemTypeToIcon(player.inventory[0]);
+
+            document.getElementById('slot2').textContent = player.inventory[1] === '' ? '[Empty]' : itemTypeToIcon(player.inventory[1]);
+
+            document.getElementById('slot3').textContent = player.inventory[2] === '' ? '[Empty]' : itemTypeToIcon(player.inventory[2]);
+
+        }
+
+
+
+        function itemTypeToIcon(type) {
+
+            if (type === 'PURPLE') return '✨W'; // Weapon icon representation
+
+            if (type === 'GOLD') return '🛡A';  // Armor icon representation
+
+            return '?';
+
+        }
+
+
+
+
+
+        // --- MAIN GAME LOOP ---
+
+
+
+        function gameLoop(timestamp) {
+
+            const deltaTime = timestamp - lastTimestamp;
+
+            lastTimestamp = timestamp;
+
+
+
+            if (!isRunning) return;
+
+
+
+            // 1. SYSTEM UPDATES
+
+            handlePlayerMovement();
+
+            updateProjectiles();
+
+            updateStorm(deltaTime);
+
+            updateCreeps();
+
+            updateItems();
+
+
+
+
+
+            // 2. RENDERING (Clearing the frame)
+
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+
+
+            // Draw Background elements first (The Storm)
+
+            drawStorm();
+
+
+
+            // Mid-ground/Entities
+
+            drawCreeps();
+
+            drawItems();
+
+
+
+            // Foreground elements
+
+            drawProjectiles();
+
+            drawPlayer();
+
+
+
+
+
+            // 3. UI UPDATE
+
+            updateHUD();
+
+
+
+            requestAnimationFrame(gameLoop);
+
+        }
+
+
+
+        // Kick off the simulation
+
+        lastTimestamp = performance.now();
+
+        gameLoop(lastTimestamp);
+
+
+
+    </script>
+
+</body>
+
+</html>
