@@ -22,6 +22,27 @@ const CREEP_COLORS = {
 
 let _instance = null;
 
+function _expectedMinSize(category, key, cfg) {
+    const f = cfg.frameSize;
+    const cols = cfg.framesPerAction;
+    const actionRows = 4;
+    const stanceRows = (category === 'hero' && cfg.stances) ? 4 : 0;
+    const rows = actionRows + stanceRows;
+    return { minWidth: f * cols, minHeight: f * rows };
+}
+
+function _validateLoadedSheet(img, category, key, cfg) {
+    const { minWidth, minHeight } = _expectedMinSize(category, key, cfg);
+    const ok = img.naturalWidth >= minWidth && img.naturalHeight >= minHeight;
+    if (!ok) {
+        console.warn(
+            `[SpriteSheetManager] ${category}:${key} rejected — ` +
+            `got ${img.naturalWidth}x${img.naturalHeight}, need >= ${minWidth}x${minHeight}`
+        );
+    }
+    return ok;
+}
+
 function _createPlaceholderSheet(category, key, cfg) {
     const f = cfg.frameSize;
     const cols = cfg.framesPerAction;
@@ -95,9 +116,12 @@ export class SpriteSheetManager {
             const cacheKey = `${category}:${key}`;
             const img = new Image();
             img.onload = () => {
+                const valid = _validateLoadedSheet(img, category, key, cfg);
                 this.cache[cacheKey] = {
                     loaded: true,
                     failed: false,
+                    placeholder: !valid,
+                    invalid: !valid,
                     image: img,
                     frameSize: cfg.frameSize,
                     framesPerAction: cfg.framesPerAction,
@@ -133,7 +157,7 @@ export class SpriteSheetManager {
 
     isReady(category, classOrType) {
         const entry = this.cache[this._resolveKey(category, classOrType)];
-        return entry?.loaded === true && !entry?.failed && !entry?.placeholder;
+        return entry?.loaded === true && !entry?.failed && !entry?.placeholder && !entry?.invalid;
     }
 
     hasRealAssets(category, classOrType) {

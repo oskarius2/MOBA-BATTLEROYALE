@@ -1,6 +1,30 @@
 {
   "useSprites": false,
   "_comment": "PNG sheets are dev placeholders (colored circles). Procedural dark-fantasy renderers are used until real art ships.",
+  "_spec": {
+    "heroes": {
+      "frameSize": 128,
+      "framesPerAction": 6,
+      "actionRows": 4,
+      "minWidth": 768,
+      "minHeight": 512,
+      "rowLayout": ["idle", "walk", "attack", "transition"]
+    },
+    "hybrid": {
+      "minHeight": 1024,
+      "extraRows": 4,
+      "stances": ["MELEE", "RANGED"],
+      "note": "RANGED uses rows 4-7 (idle/walk/attack/transition)"
+    },
+    "creeps": {
+      "frameSize": 96,
+      "framesPerAction": 4,
+      "actionRows": 4,
+      "minWidth": 384,
+      "minHeight": 384,
+      "rowLayout": ["idle", "walk", "attack", "transition"]
+    }
+  },
   "heroes": {
     "Warrior": {
       "sheet": "heroes/warrior.png",
