@@ -1,309 +1,307 @@
 // ============================================================
 // core/entities/bot-brain.js
-// Deterministic Finite State Machine for bot AI.
-// No Math.random() in loops — seeded, tick-based movement.
+// AI Brain för bot-entiteter — Finite State Machine (FSM)
+// med 4 tillstånd: CIRCLE_ESCAPE, PLAYER_AGGRO, JUNGLE_FARM, WANDERING
+// 100% deterministisk, INGEN Math.random() i loopen.
 // ============================================================
 
-import { CANVAS_WIDTH, CANVAS_HEIGHT, JUNGLE_CAMP_LOCATIONS } from '../../data/world-config.js';
-import { isOutsideBlight } from '../world/blight.js';
+import {
+    CANVAS_WIDTH,
+    CANVAS_HEIGHT,
+    VISION_RADIUS,
+    JUNGLE_CAMP_LOCATIONS,
+} from '../../data/world-config.js';
 
-const BOT_STATE = {
-    CIRCLE_ESCAPE: 'CIRCLE_ESCAPE',
-    PLAYER_AGGRO:  'PLAYER_AGGRO',
-    JUNGLE_FARM:   'JUNGLE_FARM',
-    WANDERING:     'WANDERING',
-};
-
-const BOT_CONFIG = {
-    VISION_RANGE: 1000,
-    ATTACK_RANGE: 150,
-    TARGET_SWITCH_DELAY: 500,
-    WANDER_WAYPOINT_DISTANCE: 800,
-    WANDER_ROTATE_INTERVAL: 3000,
+/**
+ * States för bot-hjärnan
+ */
+const FSM_STATES = {
+    CIRCLE_ESCAPE:  'CIRCLE_ESCAPE',   // Högst prio: fly från krympande BR-zon
+    PLAYER_AGGRO:   'PLAYER_AGGRO',    // Attackera/jaga spelare/bots
+    JUNGLE_FARM:    'JUNGLE_FARM',     // Farmra jungle för XP/guld
+    WANDERING:      'WANDERING',       // Patrullera deterministiskt
 };
 
 /**
- * @class BotBrain
- * Deterministic AI controller for bot entities.
- * Uses seeded pseudo-random for waypoint selection (not per-frame randomness).
+ * BotBrain — styr en bot-entitet genom enkel FSM.
+ * Uppdateras varje frame via update(gameState).
+ *
+ * Inputparametrar:
+ *   - bot: botentiteten själv (har x, y, vx, vy, speed, radius, seed)
+ *   - gameState: { circleShrinking, circleCenter, circleRadius, players, bots, jungleCamps, deltaTime, tick }
+ *
+ * Output:
+ *   - bot.vx, bot.vy sätts baserat på FSM-tillståndet
+ *   - bot.x, bot.y uppdateras med de nya hastighetskomponenterna
  */
 export class BotBrain {
-    /**
-     * @param {object} bot — Bot entity with x, y, vx, vy, speed, radius, seed, heroClass
-     */
     constructor(bot) {
         this.bot = bot;
-        this.currentState = BOT_STATE.WANDERING;
-        this.stateEnteredAt = 0;
-        this.lastTargetSwitchAt = 0;
-        this.currentTarget = null;
-        this.wanderWaypoint = this._generateWanderWaypoint(0);
-        this.wanderRotateAt = BOT_CONFIG.WANDER_ROTATE_INTERVAL;
-        this.tick = 0;
+
+        // FSM state
+        this.currentState = FSM_STATES.WANDERING;
+        this.stateTimer = 0;          // ticks i nuvarande state
+
+        // Targets
+        this.aggroTarget = null;      // { x, y, type: 'player'|'bot' }
+        this.jungleCampTarget = null; // index in JUNGLE_CAMP_LOCATIONS
+
+        // Deterministic wandering state
+        this.patrolAngle = 0;
+        this.patrolAngleSpeed = 0.02; // rad/tick
+        this.patrolRadius = 400;      // pixels
     }
 
     /**
-     * Seeded pseudo-random (deterministic based on seed + tick).
-     * @param {number} seed
-     * @returns {number} [0, 1)
+     * Huvuduppdaterings-metod. Kallas varje frame från game-loop.
+     *
+     * @param {Object} gameState - { circleShrinking, circleCenter, circleRadius, players, bots, jungleCamps, deltaTime, tick, allCreeps }
      */
-    _seededRandom(seed) {
-        const x = Math.sin(seed) * 10000;
-        return x - Math.floor(x);
+    update(gameState) {
+        const { circleShrinking, circleCenter, circleRadius, players, bots, deltaTime, tick } = gameState;
+
+        // ─── DECISION LOGIC: Evaluera vilka targets som är tillgängliga ──────
+
+        const botDistToCircle = Math.hypot(
+            gameState.circleCenter.x - this.bot.x,
+            gameState.circleCenter.y - this.bot.y
+        );
+        const isOutsideCircle = botDistToCircle > gameState.circleRadius + this.bot.radius;
+
+        // Hitta närmaste synlig spelare/bot inom VISION_RADIUS
+        const visibleEnemies = this._findVisibleEnemies(players, bots);
+
+        // Hitta närmaste jungle camp
+        const nearestCamp = this._findNearestJungleCamp();
+
+        // ─── FSM STATE TRANSITIONS ─────────────────────────────────────────
+
+        if (isOutsideCircle && circleShrinking) {
+            // CIRCLE_ESCAPE har högst prio
+            this.currentState = FSM_STATES.CIRCLE_ESCAPE;
+        } else if (visibleEnemies.length > 0) {
+            // PLAYER_AGGRO om fiende synlig
+            this.currentState = FSM_STATES.PLAYER_AGGRO;
+            this.aggroTarget = visibleEnemies[0]; // närmaste enemy
+            this.stateTimer = 0;
+        } else if (nearestCamp && !this._isCampTaken(nearestCamp)) {
+            // JUNGLE_FARM om jungle-camp är tillgängligt
+            this.currentState = FSM_STATES.JUNGLE_FARM;
+            this.jungleCampTarget = nearestCamp;
+            this.stateTimer = 0;
+        } else {
+            // WANDERING fallback
+            this.currentState = FSM_STATES.WANDERING;
+        }
+
+        // ─── EXECUTE FSM STATE ────────────────────────────────────────────
+
+        switch (this.currentState) {
+            case FSM_STATES.CIRCLE_ESCAPE:
+                this._executeCircleEscape(gameState);
+                break;
+
+            case FSM_STATES.PLAYER_AGGRO:
+                this._executePlayerAggro(gameState, visibleEnemies);
+                break;
+
+            case FSM_STATES.JUNGLE_FARM:
+                this._executeJungleFarm(gameState);
+                break;
+
+            case FSM_STATES.WANDERING:
+            default:
+                this._executeWandering(gameState, tick);
+                break;
+        }
+
+        // ─── APPLY MOVEMENT ───────────────────────────────────────────────
+
+        // Normalisera rörelsevektorn så det inte går snabbare diagonalt
+        const mag = Math.hypot(this.bot.vx, this.bot.vy);
+        if (mag > 0) {
+            const moveSpeed = this.bot.speed ?? 3.5;
+            this.bot.vx = (this.bot.vx / mag) * moveSpeed;
+            this.bot.vy = (this.bot.vy / mag) * moveSpeed;
+        }
+
+        // Uppdatera position
+        this.bot.x += this.bot.vx;
+        this.bot.y += this.bot.vy;
+
+        // Clamp till kartgränser
+        const MAP_MIN = 32;
+        const MAP_MAX = Math.max(CANVAS_WIDTH, CANVAS_HEIGHT) - 32;
+        this.bot.x = Math.max(MAP_MIN, Math.min(MAP_MAX, this.bot.x));
+        this.bot.y = Math.max(MAP_MIN, Math.min(MAP_MAX, this.bot.y));
+
+        this.stateTimer++;
     }
 
     /**
-     * Generate deterministic waypoint for wandering state.
-     * @param {number} tick
-     * @returns {{ x: number, y: number }}
+     * CIRCLE_ESCAPE: Rör sig mot cirkelns mitt om den är utanför
      */
-    _generateWanderWaypoint(tick) {
-        const angle = this._seededRandom(this.bot.seed + tick * 0.001) * Math.PI * 2;
-        const dist = BOT_CONFIG.WANDER_WAYPOINT_DISTANCE;
-        const baseX = CANVAS_WIDTH / 2;
-        const baseY = CANVAS_HEIGHT / 2;
-        return {
-            x: baseX + Math.cos(angle) * dist,
-            y: baseY + Math.sin(angle) * dist,
-        };
+    _executeCircleEscape(gameState) {
+        const { circleCenter } = gameState;
+        const dx = circleCenter.x - this.bot.x;
+        const dy = circleCenter.y - this.bot.y;
+        const mag = Math.hypot(dx, dy);
+
+        if (mag > 0) {
+            this.bot.vx = dx / mag;
+            this.bot.vy = dy / mag;
+        }
     }
 
     /**
-     * Find nearest jungle camp (for JUNGLE_FARM state).
-     * @returns {{ x: number, y: number } | null}
+     * PLAYER_AGGRO: Chasar närmaste synlig fiende
      */
-    _findNearestCamp() {
-        let nearest = null;
-        let minDist = Infinity;
-        for (const camp of JUNGLE_CAMP_LOCATIONS) {
-            const dist = Math.hypot(camp.x - this.bot.x, camp.y - this.bot.y);
-            if (dist < minDist) {
-                minDist = dist;
-                nearest = camp;
+    _executePlayerAggro(gameState, visibleEnemies) {
+        if (!this.aggroTarget || visibleEnemies.length === 0) {
+            this.bot.vx = 0;
+            this.bot.vy = 0;
+            return;
+        }
+
+        const target = this.aggroTarget;
+        const dx = target.x - this.bot.x;
+        const dy = target.y - this.bot.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist > 0) {
+            this.bot.vx = dx / dist;
+            this.bot.vy = dy / dist;
+        }
+    }
+
+    /**
+     * JUNGLE_FARM: Rör sig mot närmaste jungle camp
+     */
+    _executeJungleFarm(gameState) {
+        if (this.jungleCampTarget === null) {
+            this.bot.vx = 0;
+            this.bot.vy = 0;
+            return;
+        }
+
+        const camp = JUNGLE_CAMP_LOCATIONS[this.jungleCampTarget];
+        const dx = camp.x - this.bot.x;
+        const dy = camp.y - this.bot.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist > 0) {
+            this.bot.vx = dx / dist;
+            this.bot.vy = dy / dist;
+        }
+    }
+
+    /**
+     * WANDERING: Patrullera deterministiskt utan Math.random()
+     * Använder bot.seed + game tick för reproducerbar rörelse.
+     */
+    _executeWandering(gameState, tick) {
+        // Seed-baserad deterministisk patrollering
+        const seedModifier = this.bot.seed ?? 1;
+        const patrolSpeed = 0.02 + (seedModifier % 100) * 0.0001;
+
+        this.patrolAngle += patrolSpeed;
+        if (this.patrolAngle > Math.PI * 2) {
+            this.patrolAngle -= Math.PI * 2;
+        }
+
+        // Rör sig i en cirkelformad patrull runt startpositionen
+        // (eller nuvarande "home base")
+        const homeX = (this.bot.seed ?? 1) % CANVAS_WIDTH;
+        const homeY = ((this.bot.seed ?? 1) * 71) % CANVAS_HEIGHT;
+
+        const circleX = homeX + Math.cos(this.patrolAngle) * this.patrolRadius;
+        const circleY = homeY + Math.sin(this.patrolAngle) * this.patrolRadius;
+
+        const dx = circleX - this.bot.x;
+        const dy = circleY - this.bot.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist > 5) {
+            this.bot.vx = dx / dist;
+            this.bot.vy = dy / dist;
+        } else {
+            this.bot.vx = 0;
+            this.bot.vy = 0;
+        }
+    }
+
+    /**
+     * Hitta alla synliga fiender (spelare + andra bots) inom VISION_RADIUS
+     * Sorterad efter distans.
+     *
+     * @returns {Array<{ x: number, y: number, type: string }>}
+     */
+    _findVisibleEnemies(players, bots) {
+        const enemies = [];
+
+        // Alla spelare är fiender för bots
+        if (Array.isArray(players)) {
+            for (const player of players) {
+                if (!player || player.hp <= 0) continue;
+                const dist = Math.hypot(player.x - this.bot.x, player.y - this.bot.y);
+                if (dist < VISION_RADIUS) {
+                    enemies.push({ x: player.x, y: player.y, dist, type: 'player' });
+                }
             }
         }
+
+        // Andra bots är också fiender (eller allies beroende på team senare)
+        // För nu: alla bots är potentiella targets
+        if (Array.isArray(bots)) {
+            for (const bot of bots) {
+                if (!bot || bot === this.bot || bot.hp <= 0) continue;
+                const dist = Math.hypot(bot.x - this.bot.x, bot.y - this.bot.y);
+                if (dist < VISION_RADIUS) {
+                    enemies.push({ x: bot.x, y: bot.y, dist, type: 'bot' });
+                }
+            }
+        }
+
+        // Sortera efter distans, närmaste först
+        enemies.sort((a, b) => a.dist - b.dist);
+        return enemies;
+    }
+
+    /**
+     * Hitta närmaste jungle camp
+     *
+     * @returns {number|null} index i JUNGLE_CAMP_LOCATIONS, eller null
+     */
+    _findNearestJungleCamp() {
+        let nearest = null;
+        let nearestDist = Infinity;
+
+        for (let i = 0; i < JUNGLE_CAMP_LOCATIONS.length; i++) {
+            const camp = JUNGLE_CAMP_LOCATIONS[i];
+            const dist = Math.hypot(camp.x - this.bot.x, camp.y - this.bot.y);
+
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearest = i;
+            }
+        }
+
+        // Om närmaste camp är väldigt långt bort, ignorera
+        if (nearestDist > 2000) return null;
+
         return nearest;
     }
 
     /**
-     * Find all entities (players/bots) within vision range.
-     * @param {Array} allBots
-     * @param {object} player
-     * @returns {Array} [{ entity, distance }]
+     * Dummy-check: är campet redan taget/farmrat?
+     * (Kommer implementeras senare när vi kopplar in creep-system)
+     *
+     * @returns {boolean}
      */
-    _findVisibleEnemies(allBots, player) {
-        const enemies = [];
-
-        if (player && !player.isDead) {
-            const dist = Math.hypot(player.x - this.bot.x, player.y - this.bot.y);
-            if (dist < BOT_CONFIG.VISION_RANGE) {
-                enemies.push({ entity: player, distance: dist, isPlayer: true });
-            }
-        }
-
-        for (const otherBot of allBots) {
-            if (otherBot === this.bot || otherBot.isDead) continue;
-            const dist = Math.hypot(otherBot.x - this.bot.x, otherBot.y - this.bot.y);
-            if (dist < BOT_CONFIG.VISION_RANGE) {
-                enemies.push({ entity: otherBot, distance: dist, isPlayer: false });
-            }
-        }
-
-        return enemies.sort((a, b) => a.distance - b.distance);
-    }
-
-    /**
-     * Move towards a target position.
-     * @param {number} targetX
-     * @param {number} targetY
-     * @param {number} maxSpeed — clamp movement speed
-     */
-    _moveTowards(targetX, targetY, maxSpeed) {
-        const dx = targetX - this.bot.x;
-        const dy = targetY - this.bot.y;
-        const dist = Math.hypot(dx, dy);
-
-        if (dist < 1) {
-            this.bot.vx = 0;
-            this.bot.vy = 0;
-            return;
-        }
-
-        this.bot.vx = (dx / dist) * maxSpeed;
-        this.bot.vy = (dy / dist) * maxSpeed;
-    }
-
-    /**
-     * Clamp position to world bounds.
-     */
-    _clampWorldBounds() {
-        const margin = this.bot.radius + 10;
-        this.bot.x = Math.max(margin, Math.min(CANVAS_WIDTH - margin, this.bot.x));
-        this.bot.y = Math.max(margin, Math.min(CANVAS_HEIGHT - margin, this.bot.y));
-    }
-
-    /**
-     * Main update loop — called every frame from game-loop.
-     * @param {object} gameState — { running, deltaTime, ... }
-     * @param {Array} allBots — all bot entities
-     * @param {object} player — player entity
-     * @param {object} blight — Blight zone state
-     */
-    update(gameState, allBots, player, blight) {
-        this.tick++;
-        const now = Date.now();
-        const deltaTime = gameState.deltaTime || 16;
-        const speed = this.bot.speed || 2;
-
-        const now_ms = now;
-        const isOutsideZone = isOutsideBlight(this.bot.x, this.bot.y);
-        const visibleEnemies = this._findVisibleEnemies(allBots, player);
-
-        let nextState = this.currentState;
-
-        if (isOutsideZone) {
-            nextState = BOT_STATE.CIRCLE_ESCAPE;
-        } else if (visibleEnemies.length > 0) {
-            nextState = BOT_STATE.PLAYER_AGGRO;
-        } else {
-            nextState = this.currentState === BOT_STATE.JUNGLE_FARM
-                ? BOT_STATE.JUNGLE_FARM
-                : BOT_STATE.WANDERING;
-        }
-
-        if (nextState !== this.currentState) {
-            this.currentState = nextState;
-            this.stateEnteredAt = now_ms;
-            this.currentTarget = null;
-        }
-
-        switch (this.currentState) {
-            case BOT_STATE.CIRCLE_ESCAPE:
-                this._updateCircleEscape(blight, speed);
-                break;
-
-            case BOT_STATE.PLAYER_AGGRO:
-                this._updatePlayerAggro(visibleEnemies, speed, now_ms);
-                break;
-
-            case BOT_STATE.JUNGLE_FARM:
-                this._updateJungleFarm(speed);
-                break;
-
-            case BOT_STATE.WANDERING:
-            default:
-                this._updateWandering(speed);
-                break;
-        }
-
-        this.bot.x += this.bot.vx;
-        this.bot.y += this.bot.vy;
-        this._clampWorldBounds();
-
-        if (this.bot.getPointer) {
-            const ptr = this.bot.getPointer();
-            if (ptr) {
-                this.bot.facingAngle = Math.atan2(ptr.y - this.bot.y, ptr.x - this.bot.x);
-            }
-        }
-    }
-
-    /**
-     * CIRCLE_ESCAPE: Run towards center of shrinking zone.
-     * Highest priority — prevents getting stuck in storm.
-     */
-    _updateCircleEscape(blight, speed) {
-        const safeRadius = blight.currentRadius * 0.8;
-        const targetDist = Math.hypot(
-            blight.center.x - this.bot.x,
-            blight.center.y - this.bot.y
-        );
-
-        if (targetDist > safeRadius) {
-            this._moveTowards(blight.center.x, blight.center.y, speed * 1.2);
-        } else {
-            this.bot.vx *= 0.9;
-            this.bot.vy *= 0.9;
-        }
-    }
-
-    /**
-     * PLAYER_AGGRO: Chase and attack the nearest visible enemy.
-     */
-    _updatePlayerAggro(visibleEnemies, speed, now) {
-        if (visibleEnemies.length === 0) {
-            this.currentTarget = null;
-            this.bot.vx = 0;
-            this.bot.vy = 0;
-            return;
-        }
-
-        const targetEnemy = visibleEnemies[0];
-        this.currentTarget = targetEnemy.entity;
-
-        const dist = targetEnemy.distance;
-        if (dist < BOT_CONFIG.ATTACK_RANGE) {
-            this.bot.vx = 0;
-            this.bot.vy = 0;
-        } else {
-            this._moveTowards(this.currentTarget.x, this.currentTarget.y, speed);
-        }
-    }
-
-    /**
-     * JUNGLE_FARM: Head to nearest jungle camp for XP/gold.
-     */
-    _updateJungleFarm(speed) {
-        if (!this.currentTarget) {
-            this.currentTarget = this._findNearestCamp();
-        }
-
-        if (!this.currentTarget) {
-            this.currentState = BOT_STATE.WANDERING;
-            return;
-        }
-
-        const dist = Math.hypot(
-            this.currentTarget.x - this.bot.x,
-            this.currentTarget.y - this.bot.y
-        );
-
-        if (dist < 100) {
-            this.currentTarget = null;
-        } else {
-            this._moveTowards(this.currentTarget.x, this.currentTarget.y, speed);
-        }
-    }
-
-    /**
-     * WANDERING: Patrol deterministically towards seeded waypoints.
-     * No per-frame randomness — all movement is tick-based.
-     */
-    _updateWandering(speed) {
-        const dist = Math.hypot(
-            this.wanderWaypoint.x - this.bot.x,
-            this.wanderWaypoint.y - this.bot.y
-        );
-
-        if (dist < 150 || this.tick > this.wanderRotateAt) {
-            this.wanderWaypoint = this._generateWanderWaypoint(this.tick);
-            this.wanderRotateAt = this.tick + BOT_CONFIG.WANDER_ROTATE_INTERVAL;
-        }
-
-        this._moveTowards(this.wanderWaypoint.x, this.wanderWaypoint.y, speed * 0.7);
-    }
-
-    /**
-     * Get current state for debugging/UI.
-     */
-    getState() {
-        return this.currentState;
-    }
-
-    /**
-     * Get target if any (for visualization).
-     */
-    getTarget() {
-        return this.currentTarget;
+    _isCampTaken(campIndex) {
+        // TODO: Kolla om campet har creeps eller är cooldown
+        return false;
     }
 }
+
+export const FSM_STATES_EXPORT = FSM_STATES;
