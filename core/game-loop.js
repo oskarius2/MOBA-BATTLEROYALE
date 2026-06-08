@@ -205,10 +205,23 @@ export function updateGameLogic(deltaTime) {
         _player.takeDamage(Blight.damagePerTick * deltaTime / 100, 'blight');
     }
 
-    // Creep-kontaktskada
+    // --- SANITIZED CREEP CONTACT DAMAGE LOOP ---
     for (const creep of Creeps) {
-        if (creep.isDead) continue;
-        if (Math.hypot(_player.x - creep.x, _player.y - creep.y) < _player.radius + creep.radius) {
+        if (!creep || creep.isDead) continue;
+
+        // Guard: Ensure coordinates exist to avoid computing floats against NaN ghost positions
+        if (creep.x === undefined || creep.y === undefined) continue;
+
+        // Establish ironclad radius fallbacks if configuration data drifts
+        const pRadius = _player.radius || 20;
+        const cRadius = creep.radius || 15;
+
+        // Calculate strict absolute world distance
+        const distance = Math.hypot(_player.x - creep.x, _player.y - creep.y);
+
+        // Only process damage if the physical bounds are explicitly overlapping
+        if (distance < (pRadius + cRadius)) {
+            // Safe, stable deltaTime scaling
             _player.takeDamage(creep.contactDamage * deltaTime / 1000);
         }
     }
