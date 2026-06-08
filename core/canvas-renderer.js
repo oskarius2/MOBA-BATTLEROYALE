@@ -391,151 +391,15 @@ export function drawMagicProjectile(ctx, proj) {
     drawDecoratedProjectile(ctx, { type: 'firebolt', ...proj });
 }
 
-// ─── CREEP MODELS (WORLD-SPACE) ──────────────────────────────
+// ─── HP BAR (must be defined before creep models that call it) ─
 
-export function drawCreepModel(ctx, creep, time = 0) {
-    const hpRatio = creep.hp / creep.maxHp;
-    const angle   = creep.facingAngle ?? 0;
-    const size    = creep.radius || 20;
-
-    if (creep.state === 'AGGRO') {
-        ctx.save();
-        ctx.translate(creep.x, creep.y);
-        ctx.globalAlpha  = 0.3;
-        ctx.strokeStyle  = '#8b2020';
-        ctx.lineWidth    = 2;
-        ctx.beginPath();
-        ctx.arc(0, 0, size + 8, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.restore();
-    }
-
-    function getNeonGradient(cCtx, cX, cY, colorStart, colorEnd, r) {
-        const g = cCtx.createRadialGradient(cX, cY, 0, cX, cY, r);
-        g.addColorStop(0,   colorStart + 'aa');
-        g.addColorStop(0.6, colorEnd);
-        g.addColorStop(1,   'rgba(0,0,0,0)');
-        return g;
-    }
-
-    switch (creep.typeKey?.toLowerCase()) {
-        case 'scout': {
-            ctx.save();
-            ctx.translate(creep.x, creep.y);
-            ctx.rotate(angle);
-            // FIX: explicit reset vid restore (belt-and-suspenders mot exception-leak)
-            ctx.globalCompositeOperation = 'lighter';
-
-            ctx.fillStyle = getNeonGradient(ctx, 0, -size * 0.3, '#ff5500', '#ff9900', size * 2);
-            ctx.beginPath();
-            ctx.moveTo(-size * 0.4, -size * 0.5);
-            ctx.lineTo( size * 0.4, -size * 0.5);
-            ctx.lineTo( size * 0.6,  size * 0.2);
-            ctx.lineTo(-size * 0.6,  size * 0.2);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.shadowColor = '#ff5500';
-            ctx.shadowBlur  = 15;
-            ctx.strokeStyle = '#ffaa44';
-            ctx.lineWidth   = 2;
-            ctx.beginPath();
-            ctx.moveTo(-size * 0.3, size * 0.2); ctx.lineTo(-size * 0.3, size * 0.8);
-            ctx.moveTo( size * 0.3, size * 0.2); ctx.lineTo( size * 0.3, size * 0.8);
-            ctx.stroke();
-
-            ctx.shadowBlur  = 0;
-            ctx.fillStyle   = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(0, 0, size * 0.25, 0, Math.PI * 2);
-            ctx.fill();
-
-            // FIX: explicit reset INNAN restore
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.restore();
-            break;
-        }
-
-        case 'warrior': {
-            const pulseScale = 1 + Math.sin(time * 0.008) * 0.08;
-            ctx.save();
-            ctx.translate(creep.x, creep.y);
-            ctx.rotate(time * 0.002);
-            ctx.globalCompositeOperation = 'lighter';
-
-            ctx.shadowColor = '#ff0055';
-            ctx.shadowBlur  = 30 * pulseScale;
-            ctx.fillStyle   = getNeonGradient(ctx, 0, 0, '#ff0055', '#cc0033', size * 3);
-            ctx.beginPath();
-            for (let i = 0; i < 8; i++) {
-                const a = i * Math.PI / 4;
-                ctx.lineTo(size * pulseScale * Math.cos(a), size * pulseScale * Math.sin(a));
-            }
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.shadowColor = '#9900ff';
-            ctx.shadowBlur  = 15;
-            ctx.fillStyle   = getNeonGradient(ctx, 0, 0, '#6600cc', '#9900ff', size * pulseScale);
-            ctx.beginPath();
-            ctx.arc(0, 0, size * pulseScale * 0.6, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.shadowBlur               = 0;
-            ctx.globalCompositeOperation = 'source-over';   // FIX
-            ctx.restore();
-            break;
-        }
-
-        case 'ancient':
-        case 'boss':
-        case 'ancient boss':
-        case 'ancient_boss': {
-            const tFactor    = Math.sin(time * 0.003);
-            const pulseScale = 1.4 - (1.0 + (1 - Math.abs(tFactor)) * 0.4);
-            ctx.save();
-            ctx.translate(creep.x, creep.y);
-            ctx.globalCompositeOperation = 'lighter';
-
-            ctx.shadowColor = '#00ffcc';
-            ctx.shadowBlur  = 45;
-            const totalSize = size * pulseScale;
-            for (let level = 1; level <= 3; level++) {
-                const curSize = totalSize * (level / 3);
-                ctx.fillStyle  = getNeonGradient(ctx, 0, 0, '#00ffcc', '#00aaff', curSize * 1.5);
-                ctx.globalAlpha = level === 2 ? 0.7 : 1.0;
-                ctx.beginPath();
-                for (let i = 0; i < 10; i++) {
-                    const a = (Math.PI * i) / 5 - Math.PI / 2;
-                    const l = i % 2 === 0 ? curSize : curSize * 0.4;
-                    const xp = l * Math.cos(a) + Math.sin(time * 0.002 + i) * 2;
-                    const yp = l * Math.sin(a) + Math.cos(time * 0.002 + i) * 2;
-                    if (i === 0) ctx.moveTo(xp, yp); else ctx.lineTo(xp, yp);
-                }
-                ctx.closePath();
-                ctx.fill();
-            }
-            ctx.globalAlpha              = 1.0;
-            ctx.shadowBlur               = 0;
-            ctx.globalCompositeOperation = 'source-over';   // FIX
-            ctx.restore();
-            break;
-        }
-
-        default: {
-            ctx.save();
-            ctx.translate(creep.x, creep.y);
-            ctx.fillStyle = creep.fillColor ?? '#00ffff';
-            ctx.beginPath();
-            ctx.arc(0, 0, size, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-            break;
-        }
-    }
+function adjustColor(hex, amount) {
+    const n = parseInt(hex.replace('#', ''), 16);
+    const r = Math.max(0, Math.min(255, (n >> 16) + amount));
+    const g = Math.max(0, Math.min(255, ((n >>  8) & 0xff) + amount));
+    const b = Math.max(0, Math.min(255, (n & 0xff) + amount));
+    return `rgb(${r},${g},${b})`;
 }
-
-// ─── HP BAR ──────────────────────────────────────────────────
 
 export function drawHpBar(c, cx, topY, width, height, ratio, options = {}) {
     const {
@@ -565,12 +429,213 @@ export function drawHpBar(c, cx, topY, width, height, ratio, options = {}) {
     c.restore();
 }
 
-function adjustColor(hex, amount) {
-    const n = parseInt(hex.replace('#', ''), 16);
-    const r = Math.max(0, Math.min(255, (n >> 16) + amount));
-    const g = Math.max(0, Math.min(255, ((n >>  8) & 0xff) + amount));
-    const b = Math.max(0, Math.min(255, (n & 0xff) + amount));
-    return `rgb(${r},${g},${b})`;
+// ─── CREEP MODELS (WORLD-SPACE) ──────────────────────────────
+
+export function drawScoutSprite(ctx, x, y, angle, time = 0, hpRatio = 1) {
+    const eyePulse = 0.5 + 0.5 * Math.sin(time * 0.008);
+
+    withOrientation(ctx, x, y, angle, (c) => {
+        const bodyW = 10;
+        const bodyH = 7;
+
+        c.beginPath();
+        c.ellipse(0, 0, bodyW, bodyH, 0, 0, Math.PI * 2);
+        c.fillStyle = 'rgba(8, 6, 14, 0.92)';
+        c.fill();
+        c.strokeStyle = 'rgba(40, 30, 55, 0.8)';
+        c.lineWidth = 1.5;
+        c.stroke();
+
+        c.beginPath();
+        c.moveTo(bodyW, 0);
+        c.lineTo(bodyW + 8, -4);
+        c.lineTo(bodyW + 8, 4);
+        c.closePath();
+        c.fillStyle = 'rgba(12, 8, 18, 0.9)';
+        c.fill();
+
+        c.beginPath();
+        c.moveTo(-bodyW, -bodyH * 0.5);
+        c.quadraticCurveTo(-bodyW - 10, -bodyH - 4, -bodyW - 6, 0);
+        c.quadraticCurveTo(-bodyW - 10, bodyH + 4, -bodyW, bodyH * 0.5);
+        c.fillStyle = 'rgba(6, 4, 10, 0.85)';
+        c.fill();
+
+        drawGlowRing(c, 4, -3, 2.5, '#ff44aa', 1, 3);
+        c.beginPath();
+        c.arc(4, -3, 2 + eyePulse * 1.2, 0, Math.PI * 2);
+        c.fillStyle = `rgba(255, 50, 180, ${0.75 + eyePulse * 0.25})`;
+        c.fill();
+
+        drawGlowRing(c, 4, 3, 2.5, '#ff44aa', 1, 3);
+        c.beginPath();
+        c.arc(4, 3, 2 + eyePulse * 1.2, 0, Math.PI * 2);
+        c.fillStyle = `rgba(255, 50, 180, ${0.75 + eyePulse * 0.25})`;
+        c.fill();
+
+        drawHpBar(c, 0, -bodyH - 10, bodyW * 2, 3, hpRatio, '#ff4488');
+    });
+}
+
+export function drawWarriorBeast(ctx, x, y, angle, time = 0, hpRatio = 1) {
+    const bladePulse = 0.5 + 0.5 * Math.sin(time * 0.006);
+
+    withOrientation(ctx, x, y, angle, (c) => {
+        const bodyR = 16;
+
+        c.beginPath();
+        c.ellipse(0, 0, bodyR, bodyR * 0.8, 0, 0, Math.PI * 2);
+        c.fillStyle = 'rgba(22, 16, 12, 0.95)';
+        c.fill();
+        c.strokeStyle = '#3a3028';
+        c.lineWidth = 3;
+        c.stroke();
+
+        c.beginPath();
+        c.moveTo(bodyR * 0.5, -bodyR * 0.5);
+        c.lineTo(bodyR + 10, -bodyR * 0.3);
+        c.lineTo(bodyR + 6, 0);
+        c.lineTo(bodyR + 10, bodyR * 0.3);
+        c.lineTo(bodyR * 0.5, bodyR * 0.5);
+        c.closePath();
+        c.fillStyle = 'rgba(30, 22, 16, 0.9)';
+        c.fill();
+
+        for (let side = -1; side <= 1; side += 2) {
+            const bx = bodyR * 0.3;
+            const by = side * bodyR * 0.55;
+            c.save();
+            c.translate(bx, by);
+            c.rotate(side * 0.4);
+            drawGlowRing(c, 14, 0, 3, '#ff8800', 2, 4);
+            c.beginPath();
+            c.moveTo(0, 0);
+            c.lineTo(22, -3);
+            c.lineTo(26, 0);
+            c.lineTo(22, 3);
+            c.closePath();
+            c.fillStyle = 'rgba(50, 35, 20, 0.95)';
+            c.fill();
+            c.strokeStyle = `rgba(255, 136, 0, ${0.7 + bladePulse * 0.3})`;
+            c.lineWidth = 2;
+            c.stroke();
+            c.beginPath();
+            c.moveTo(20, 0);
+            c.lineTo(28, 0);
+            c.strokeStyle = `rgba(255, 170, 50, ${0.8 + bladePulse * 0.2})`;
+            c.lineWidth = 3;
+            c.stroke();
+            c.restore();
+        }
+
+        c.beginPath();
+        c.arc(bodyR * 0.4, 0, 4, 0, Math.PI * 2);
+        c.fillStyle = '#ff6600';
+        c.fill();
+
+        drawHpBar(c, 0, -bodyR - 12, bodyR * 2, 4, hpRatio, '#ff6644');
+    });
+}
+
+export function drawAncientGolem(ctx, x, y, angle, time = 0, hpRatio = 1) {
+    const shieldSpin = time * 0.001;
+    const corePulse = 0.6 + 0.4 * Math.sin(time * 0.003);
+
+    drawRuneGlow(ctx, x, y, 72, time, 'rgba(255, 210, 60, 0.5)', 'rgba(255, 180, 40, 0.2)');
+
+    withOrientation(ctx, x, y, angle, (c) => {
+        const hullR = 38;
+        const shieldR = hullR + 16;
+
+        c.beginPath();
+        c.moveTo(-hullR * 0.6, -hullR);
+        c.lineTo(hullR * 0.5, -hullR * 0.9);
+        c.lineTo(hullR, -hullR * 0.2);
+        c.lineTo(hullR * 0.8, hullR * 0.7);
+        c.lineTo(0, hullR);
+        c.lineTo(-hullR * 0.9, hullR * 0.5);
+        c.lineTo(-hullR, -hullR * 0.3);
+        c.closePath();
+        c.fillStyle = '#2a2218';
+        c.fill();
+        c.strokeStyle = '#4a3c28';
+        c.lineWidth = 5;
+        c.stroke();
+
+        drawGlowRing(c, 0, 0, shieldR, '#ffcc44', 4, 2);
+
+        for (let s = 0; s < 4; s++) {
+            const start = shieldSpin + s * (Math.PI / 2);
+            const end = start + Math.PI * 0.42;
+            const segPulse = 0.45 + 0.25 * Math.sin(time * 0.004 + s);
+            c.beginPath();
+            c.arc(0, 0, shieldR, start, end);
+            c.strokeStyle = `rgba(255, 210, 60, ${segPulse})`;
+            c.lineWidth = 6;
+            c.stroke();
+
+            const mid = (start + end) / 2;
+            const rx = Math.cos(mid) * shieldR;
+            const ry = Math.sin(mid) * shieldR;
+            c.save();
+            c.translate(rx, ry);
+            c.rotate(mid + Math.PI / 2);
+            c.strokeStyle = `rgba(255, 230, 120, ${segPulse})`;
+            c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(-4, 0);
+            c.lineTo(4, 0);
+            c.moveTo(0, -4);
+            c.lineTo(0, 4);
+            c.stroke();
+            c.restore();
+        }
+
+        c.beginPath();
+        c.arc(0, -hullR * 0.15, 12 * corePulse, 0, Math.PI * 2);
+        c.fillStyle = `rgba(255, 200, 50, ${0.75 * corePulse})`;
+        c.fill();
+        drawGlowRing(c, 0, -hullR * 0.15, 14, '#ffcc44', 2, 5);
+
+        c.beginPath();
+        c.arc(-10, -hullR * 0.55, 5, 0, Math.PI * 2);
+        c.arc(10, -hullR * 0.55, 5, 0, Math.PI * 2);
+        c.fillStyle = '#1a1408';
+        c.fill();
+
+        drawHpBar(c, 0, -hullR - 18, hullR * 2, 6, hpRatio, { fillColor: '#ffcc00', isBoss: true });
+    });
+}
+
+export function drawCreepModel(ctx, creep, time = 0) {
+    const hpRatio = creep.hp / creep.maxHp;
+    const angle = creep.facingAngle ?? 0;
+
+    if (creep.state === 'AGGRO') {
+        ctx.save();
+        ctx.translate(creep.x, creep.y);
+        ctx.globalAlpha = 0.3;
+        ctx.strokeStyle = '#8b2020';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, 0, creep.radius + 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    switch (creep.typeKey) {
+        case 'scout':
+            drawScoutSprite(ctx, creep.x, creep.y, angle, time, hpRatio);
+            break;
+        case 'warrior':
+            drawWarriorBeast(ctx, creep.x, creep.y, angle, time, hpRatio);
+            break;
+        case 'ancient':
+            drawAncientGolem(ctx, creep.x, creep.y, angle, time, hpRatio);
+            break;
+        default:
+            drawWarriorBeast(ctx, creep.x, creep.y, angle, time, hpRatio);
+    }
 }
 
 // ─── HERO RENDERERS (SCREEN-SPACE) ───────────────────────────

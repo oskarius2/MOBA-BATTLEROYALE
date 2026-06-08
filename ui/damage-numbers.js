@@ -3,6 +3,8 @@
 // Floating damage numbers overlay (screen-space).
 // ============================================================
 
+import { isDamageNumbersEnabled } from './game-settings.js';
+
 const COLORS = {
     physical: '#f0e6c8',
     magic:    '#7ec8ff',
@@ -24,6 +26,7 @@ export function resizeDamageOverlay() {
 }
 
 export function spawnDamageNumber(worldX, worldY, amount, type = 'physical') {
+    if (!isDamageNumbersEnabled()) return;
     const rounded = Math.round(amount);
     if (rounded <= 0 && type !== 'heal') return;
     _numbers.push({
@@ -37,6 +40,7 @@ export function spawnDamageNumber(worldX, worldY, amount, type = 'physical') {
 }
 
 export function renderDamageNumbers(camera, viewW, viewH) {
+    if (!isDamageNumbersEnabled()) return;
     if (!_ctx) resizeDamageOverlay();
     if (!_ctx || !_overlay) return;
 
@@ -73,4 +77,9 @@ export function tickDamageNumbers(deltaSeconds) {
         _numbers[i].age += deltaSeconds;
         if (_numbers[i].age > 1.5) _numbers.splice(i, 1);
     }
+}
+
+export function clearDamageNumbers() {
+    _numbers.length = 0;
+    if (_ctx && _overlay) _ctx.clearRect(0, 0, _overlay.width, _overlay.height);
 }

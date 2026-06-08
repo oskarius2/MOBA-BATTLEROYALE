@@ -13,6 +13,7 @@ import { CharacterSpriteModel } from '../rendering/character-sprite-model.js';
 import { SpriteSheetManager } from '../rendering/sprite-sheet-manager.js';
 import { USE_SPRITE_RENDERING } from '../rendering/render-config.js';
 import { emitDamageNumber } from '../damage-events.js';
+import { triggerScreenShake } from '../camera.js';
 
 const HERO_RENDERERS = {
     'Warrior':    drawHeroWarrior,
@@ -113,6 +114,7 @@ export class Player {
         const finalDamage = this.isShielded ? amount * 0.3 : amount;
         if (finalDamage > 0) {
             emitDamageNumber(this.x, this.y - this.radius, finalDamage, damageType);
+            triggerScreenShake(Math.min(12, 3 + finalDamage * 0.15));
         }
         this.hp = Math.max(0, this.hp - finalDamage);
         if (this.hp <= 0 && this.onDeath) this.onDeath();

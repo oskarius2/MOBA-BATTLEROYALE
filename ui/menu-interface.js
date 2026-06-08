@@ -3,8 +3,10 @@
 // Welcome → Main (Play / Classes / Settings) → Pick Class → GO
 // ============================================================
 
-const menuStyle = document.createElement('style');
-menuStyle.innerHTML = `
+import { gameSettings, setGameSetting } from './game-settings.js';
+import { clearDamageNumbers } from './damage-numbers.js';
+
+const MENU_STYLES = `
     :root {
         --df-bg: #050f08;
         --df-copper: #8b6914;
@@ -624,7 +626,16 @@ menuStyle.innerHTML = `
         }
     }
 `;
-document.head.appendChild(menuStyle);
+
+let _menuStylesInjected = false;
+
+function ensureMenuStyles() {
+    if (_menuStylesInjected) return;
+    _menuStylesInjected = true;
+    const menuStyle = document.createElement('style');
+    menuStyle.textContent = MENU_STYLES;
+    document.head.appendChild(menuStyle);
+}
 
 const HERO_GLOW_CLASS = {
     warrior: 'hero-card-glow-warrior',
@@ -657,6 +668,8 @@ let selectedHeroKey = null;
 let onEnterCallback = null;
 let currentStage = 'welcome';
 let welcomePlayed = false;
+let _pausedForSettings = false;
+let _gamePauseHandler = null;
 
 const STAGES = ['welcome', 'main', 'class-select', 'settings'];
 
@@ -753,6 +766,7 @@ export function selectHero(heroKey, heroRoster) {
 }
 
 export function hideClassSelectOverlay() {
+    _pausedForSettings = false;
     getOverlay()?.classList.add('hidden');
 }
 
@@ -809,10 +823,45 @@ function bindClassStage() {
     document.getElementById('btn-class-back')?.addEventListener('click', () => setStage('main'));
 }
 
+export function registerGamePauseHandler(handler) {
+    _gamePauseHandler = handler;
+}
+
+export function openInGameSettings() {
+    _pausedForSettings = true;
+    getOverlay()?.classList.remove('hidden');
+    setStage('settings');
+    _gamePauseHandler?.(false);
+}
+
+export function isInGameSettingsOpen() {
+    return _pausedForSettings;
+}
+
+export function closeInGameSettings() {
+    if (!_pausedForSettings) return;
+    _pausedForSettings = false;
+    getOverlay()?.classList.add('hidden');
+    _gamePauseHandler?.(true);
+}
+
 function bindSettingsStage() {
-    document.getElementById('btn-settings-back')?.addEventListener('click', () => setStage('main'));
-    document.querySelectorAll('.settings-toggle').forEach(toggle => {
-        toggle.addEventListener('click', () => toggle.classList.toggle('on'));
+    document.getElementById('btn-settings-back')?.addEventListener('click', () => {
+        if (_pausedForSettings) closeInGameSettings();
+        else setStage('main');
+    });
+    document.querySelectorAll('.settings-toggle[data-setting]').forEach(toggle => {
+        const key = toggle.dataset.setting;
+        if (key in gameSettings) {
+            toggle.classList.toggle('on', gameSettings[key]);
+        }
+        toggle.addEventListener('click', () => {
+            const enabled = toggle.classList.toggle('on');
+            if (key in gameSettings) {
+                setGameSetting(key, enabled);
+                if (key === 'damageNumbers' && !enabled) clearDamageNumbers();
+            }
+        });
     });
 }
 
@@ -821,6 +870,7 @@ export function getSelectedHeroKey() {
 }
 
 export function initHeroSelectMenu(heroRoster, onEnter) {
+    ensureMenuStyles();
     onEnterCallback = onEnter;
     const grid = document.getElementById('hero-card-grid');
     const enterBtn = document.getElementById('enter-forest-btn');

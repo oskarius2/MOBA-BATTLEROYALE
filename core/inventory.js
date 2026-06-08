@@ -6,7 +6,7 @@
 
 import { SHOP_CATALOG }    from '../data/shop-catalog.js';
 import { calculateItemCost } from './economy-engine.js';
-import { checkMapPresenceUI } from '../ui/shop-interface.js';
+import { checkMapPresenceUI } from '../ui/map-presence.js';
 
 export const inventoryItems = { slot1: null, slot2: null, slot3: null };
 
@@ -29,16 +29,39 @@ function slotElementId(slot) {
     return slot.replace('slot', 'slot-');   // 'slot1' → 'slot-1'
 }
 
+const ARCHETYPE_CLASSES = ['offensive', 'defensive', 'utility'];
+
+function archetypeFromItem(item) {
+    if (!item) return null;
+    if (item.archetype) return item.archetype;
+    const type = String(item.type ?? '').toUpperCase();
+    if (type === 'OFFENSIVE') return 'offensive';
+    if (type === 'DEFENSIVE') return 'defensive';
+    if (type === 'UTILITY') return 'utility';
+    return 'utility';
+}
+
+function paintInventorySlot(el, item = null) {
+    if (!el) return;
+    el.classList.remove('filled', ...ARCHETYPE_CLASSES);
+    el.style.boxShadow = '';
+    if (!item) {
+        el.textContent = '—';
+        el.setAttribute('aria-label', el.id.replace('slot-', 'Inventory slot '));
+        return;
+    }
+    el.classList.add('filled');
+    const archetype = archetypeFromItem(item);
+    if (archetype) el.classList.add(archetype);
+    el.textContent = item.name;
+    el.setAttribute('aria-label', `${item.name}${item.mapPresence ? ', map presence active' : ''}`);
+}
+
 export function resetInventory(onChanged) {
     inventoryItems.slot1 = null;
     inventoryItems.slot2 = null;
     inventoryItems.slot3 = null;
-    ['slot-1','slot-2','slot-3'].forEach(id => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.textContent  = `[${id.replace('-', ' ').toUpperCase()}]`;
-        el.style.boxShadow = '';
-    });
+    ['slot-1', 'slot-2', 'slot-3'].forEach(id => paintInventorySlot(document.getElementById(id)));
     if (onChanged) onChanged();
 }
 
@@ -52,11 +75,7 @@ export function collectItem(item, onChanged) {
     const slot = nextFreeSlot();
     if (!slot) return;
 
-    const el = document.getElementById(slotElementId(slot));
-    if (el) {
-        el.textContent     = `${item.name} (${item.type})`;
-        el.style.boxShadow = '0 0 15px rgba(201, 162, 39, 0.5)';
-    }
+    paintInventorySlot(document.getElementById(slotElementId(slot)), item);
 
     inventoryItems[slot] = item;
     checkMapPresenceUI(inventorySlotsArray());
@@ -102,14 +121,7 @@ export function buyItem(itemId, playerClass, gameState, player, onChanged) {
         player.hp     = Math.min(player.hp + purchasedItem.stats.hp, player.maxHp);
     }
 
-    const rarityLabel = catalogItem.archetype === 'offensive' ? 'ATK'
-                      : catalogItem.archetype === 'defensive' ? 'DEF' : 'UTL';
-
-    const el = document.getElementById(slotElementId(slot));
-    if (el) {
-        el.textContent     = `${purchasedItem.name} [${rarityLabel}]`;
-        el.style.boxShadow = '0 0 15px rgba(201, 162, 39, 0.5)';
-    }
+    paintInventorySlot(document.getElementById(slotElementId(slot)), purchasedItem);
 
     inventoryItems[slot] = purchasedItem;
     checkMapPresenceUI(inventorySlotsArray());

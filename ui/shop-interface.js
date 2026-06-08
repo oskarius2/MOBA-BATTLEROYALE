@@ -2,8 +2,7 @@
 // DARK FANTASY — SHOP & MAP PRESENCE UI
 // ============================================================
 
-const style = document.createElement('style');
-style.innerHTML = `
+const SHOP_STYLES = `
     #shop-overlay {
         position: fixed;
         top: 50%;
@@ -233,47 +232,57 @@ style.innerHTML = `
         #shop-overlay, #shop-scrim, .shop-card, #map-presence-alert { transition-duration: 0.01ms; animation: none; }
     }
 `;
-document.head.appendChild(style);
 
-const shopScrim = document.createElement('div');
-shopScrim.id = 'shop-scrim';
-shopScrim.addEventListener('click', () => closeShopUI());
-document.body.appendChild(shopScrim);
+let shopScrim = null;
+let shopOverlay = null;
+let _mounted = false;
 
-const shopOverlay = document.createElement('div');
-shopOverlay.id = 'shop-overlay';
-shopOverlay.innerHTML = `
-    <div class="shop-header">
-        <div>
-            <div class="shop-header-text">Merchant's Cache</div>
-            <div class="shop-header-sub">Press [B] to close</div>
+function ensureShopMounted() {
+    if (_mounted) return;
+    _mounted = true;
+
+    const style = document.createElement('style');
+    style.textContent = SHOP_STYLES;
+    document.head.appendChild(style);
+
+    shopScrim = document.createElement('div');
+    shopScrim.id = 'shop-scrim';
+    shopScrim.addEventListener('click', () => closeShopUI());
+    document.body.appendChild(shopScrim);
+
+    shopOverlay = document.createElement('div');
+    shopOverlay.id = 'shop-overlay';
+    shopOverlay.innerHTML = `
+        <div class="shop-header">
+            <div>
+                <div class="shop-header-text">Merchant's Cache</div>
+                <div class="shop-header-sub">Press [B] to close</div>
+            </div>
+            <button type="button" class="shop-close-btn" id="shop-close-btn" aria-label="Close shop">✕</button>
         </div>
-        <button type="button" class="shop-close-btn" id="shop-close-btn" aria-label="Close shop">✕</button>
-    </div>
-    <div class="shop-body">
-        <div class="item-grid" id="shop-item-list"></div>
-    </div>
-`;
-document.body.appendChild(shopOverlay);
+        <div class="shop-body">
+            <div class="item-grid" id="shop-item-list"></div>
+        </div>
+    `;
+    document.body.appendChild(shopOverlay);
+    document.getElementById('shop-close-btn')?.addEventListener('click', () => closeShopUI());
+}
 
-document.getElementById('shop-close-btn')?.addEventListener('click', () => closeShopUI());
-
-const ITEM_DESCRIPTIONS = {
-    armor: 'Reinforced plate that shrugs off creep claws. Favored by frontline champions.',
-    bow: 'A composite bow strung with sinew. Extends your kill range in the canopy.',
-    scroll: 'Arcane parchment humming with latent fire. Channels spell power for casters.',
-};
+export { checkMapPresenceUI } from './map-presence.js';
 
 export function isShopOpen() {
+    ensureShopMounted();
     return shopOverlay.classList.contains('shop-open');
 }
 
 export function openShopUI() {
+    ensureShopMounted();
     shopOverlay.classList.add('shop-open');
     shopScrim.classList.add('shop-open');
 }
 
 export function closeShopUI() {
+    if (!shopOverlay) return;
     shopOverlay.classList.remove('shop-open');
     shopScrim.classList.remove('shop-open');
 }
@@ -284,6 +293,7 @@ export function toggleShopUI() {
 }
 
 export function updateShopUI(itemsCatalog, playerClass, costCalculator) {
+    ensureShopMounted();
     const grid = document.getElementById('shop-item-list');
     if (!grid) return;
     grid.innerHTML = '';
@@ -301,7 +311,7 @@ export function updateShopUI(itemsCatalog, playerClass, costCalculator) {
             hint = ' (Premium for your class)';
         }
 
-        const description = item.description || ITEM_DESCRIPTIONS[item.id] || 'A mysterious artifact from the dark jungle.';
+        const description = item.description || 'A mysterious artifact from the dark jungle.';
 
         const card = document.createElement('div');
         card.className = 'shop-card';
@@ -319,13 +329,3 @@ export function updateShopUI(itemsCatalog, playerClass, costCalculator) {
     });
 }
 
-export function checkMapPresenceUI(playerInventory) {
-    const hasLegendary = playerInventory.some(item => item && item.mapPresence === true);
-    const alert = document.getElementById('map-presence-alert');
-    if (alert) alert.style.display = hasLegendary ? 'block' : 'none';
-}
-
-const alertBox = document.createElement('div');
-alertBox.id = 'map-presence-alert';
-alertBox.innerText = 'Map Presence Active — You Are Revealed';
-document.body.appendChild(alertBox);

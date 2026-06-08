@@ -154,7 +154,6 @@
 #hud-top-right,
 #hud-action-bar,
 #level-up-flash {
-    position: relative;
     z-index: 20;
 }
 

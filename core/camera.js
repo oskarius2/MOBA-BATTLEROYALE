@@ -5,8 +5,30 @@
 // ============================================================
 
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../data/world-config.js';
+import { isScreenShakeEnabled } from '../ui/game-settings.js';
 
 export const camera = { x: 0, y: 0 };
+
+let _shakeIntensity = 0;
+
+export function triggerScreenShake(intensity = 6) {
+    if (!isScreenShakeEnabled()) return;
+    _shakeIntensity = Math.max(_shakeIntensity, intensity);
+}
+
+export function updateScreenShake(deltaSeconds) {
+    if (_shakeIntensity <= 0) return;
+    _shakeIntensity = Math.max(0, _shakeIntensity - deltaSeconds * 28);
+}
+
+export function getCameraOffset() {
+    if (_shakeIntensity <= 0) return { x: 0, y: 0 };
+    const mag = _shakeIntensity;
+    return {
+        x: (Math.random() - 0.5) * mag * 2,
+        y: (Math.random() - 0.5) * mag * 2,
+    };
+}
 
 function clampCameraAxis(playerCoord, viewportSize, canvasSize) {
     if (viewportSize >= canvasSize) return canvasSize / 2;

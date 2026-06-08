@@ -193,16 +193,16 @@
                 <div class="settings-panel">
                     <h2>Settings</h2>
                     <div class="settings-row">
-                        <span>Master Volume</span>
-                        <button type="button" class="settings-toggle on" aria-label="Toggle master volume"></button>
+                        <span>Master Volume <small style="opacity:0.55;font-size:10px;">(no audio yet)</small></span>
+                        <button type="button" class="settings-toggle on" data-setting="masterVolume" aria-label="Toggle master volume"></button>
                     </div>
                     <div class="settings-row">
                         <span>Screen Shake</span>
-                        <button type="button" class="settings-toggle on" aria-label="Toggle screen shake"></button>
+                        <button type="button" class="settings-toggle on" data-setting="screenShake" aria-label="Toggle screen shake"></button>
                     </div>
                     <div class="settings-row">
                         <span>Show Damage Numbers</span>
-                        <button type="button" class="settings-toggle" aria-label="Toggle damage numbers"></button>
+                        <button type="button" class="settings-toggle on" data-setting="damageNumbers" aria-label="Toggle damage numbers"></button>
                     </div>
                     <button type="button" class="glass-btn glass-btn-back" id="btn-settings-back" style="width:100%;margin-top:8px;">← Back</button>
                 </div>
@@ -248,9 +248,11 @@ import { buyItem }         from './core/inventory.js';
 import { setGameLoopRefs, setKeysRef, gameState } from './core/game-loop.js';
 import { setGameInitRefs, initializeGame, applyHeroConfig, showGameOver, resetGame, getPlayerClass, ensureSpritesLoaded } from './core/game-init.js';
 import { showLevelUpFlash, markHudDirty } from './ui/hud.js';
-import { toggleShopUI, isShopOpen, updateShopUI } from './ui/shop-interface.js';
-import { initHeroSelectMenu, showClassSelectMenu, selectHero, buildWelcomeLetters } from './ui/menu-interface.js';
-import { initForestEnvironment } from './core/canvas-renderer.js';
+import { toggleShopUI, isShopOpen, closeShopUI, updateShopUI } from './ui/shop-interface.js';
+import {
+    initHeroSelectMenu, showClassSelectMenu, selectHero, buildWelcomeLetters,
+    registerGamePauseHandler, openInGameSettings, closeInGameSettings, isInGameSettingsOpen,
+} from './ui/menu-interface.js';
 import AbilityEngine, { CooldownState } from './core/ability-engine.js';
 import { SHOP_CATALOG }    from './data/shop-catalog.js';
 import { HERO_ROSTER }     from './data/hero-roster.js';
@@ -296,11 +298,21 @@ initInput(canvas, {
     getWorldCoords:(e, c) => getWorldCoordinates(e, c),
     isShopOpen,
     onShopToggle:  () => toggleShopUI(),
+    onEscape:      () => {
+        if (isShopOpen()) { closeShopUI(); return; }
+        if (isInGameSettingsOpen()) { closeInGameSettings(); return; }
+        if (gameState.running) openInGameSettings();
+    },
     onBasicAttack: () => AbilityEngine.basicAttack(PlayerInstance, pointerWorld, Projectiles, Creeps),
     onAbility: (slot) => {
         const ok = AbilityEngine.cast(slot, PlayerInstance, pointerWorld, Projectiles, Creeps);
         if (ok) markHudDirty();
     },
+});
+
+registerGamePauseHandler((shouldRun) => {
+    gameState.running = shouldRun;
+    if (shouldRun) requestAnimationFrame(gameLoop);
 });
 
 // ─── WINDOW-EVENTS ────────────────────────────────────────────
@@ -331,7 +343,6 @@ window.onload = async () => {
         applyHeroConfig(heroKey);
         initializeGame();
     });
-    initForestEnvironment(6000, 6000, 300);
     showClassSelectMenu({ skipWelcome: false });
 };
 </script>

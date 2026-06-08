@@ -26,27 +26,30 @@ const hudCache = {
     aliveCreeps: -1, activeCamps: -1,
     qCd: -1, wCd: -1, eCd: -1, aaCd: -1,
     heroClass: '', heroTitle: '',
-    isShielded: false, valhallaActive: false, stance: '',
-    inBlight: false, blightDist: -1,
     buffKey: '',
+    blightKey: '',
+    lowHp: false,
 };
 
+const dom = {};
+const abilitySlots = {};
+
+function $(id) {
+    return dom[id] ??= document.getElementById(id);
+}
+
+function slotEl(slotId) {
+    return abilitySlots[slotId] ??= document.querySelector(`.ability-slot[data-slot="${slotId}"]`);
+}
+
 export function markHudDirty() {
-    hudCache.level = -1;
-    hudCache.gold = -1;
-    hudCache.xp = -1;
-    hudCache.hp = -1;
-    hudCache.maxHp = -1;
-    hudCache.aliveCreeps = -1;
-    hudCache.activeCamps = -1;
-    hudCache.qCd = -1;
-    hudCache.wCd = -1;
-    hudCache.eCd = -1;
-    hudCache.aaCd = -1;
-    hudCache.heroClass = '';
-    hudCache.heroTitle = '';
-    hudCache.buffKey = '';
-    hudCache.blightDist = -1;
+    Object.assign(hudCache, {
+        level: -1, gold: -1, xp: -1, hp: -1, maxHp: -1,
+        aliveCreeps: -1, activeCamps: -1,
+        qCd: -1, wCd: -1, eCd: -1, aaCd: -1,
+        heroClass: '', heroTitle: '',
+        buffKey: '', blightKey: '', lowHp: false,
+    });
 }
 
 /**
@@ -71,6 +74,8 @@ export function updateHud(player, gameState, cooldowns, aliveCreeps, activeCamps
         : 9999;
     const inBlight = isOutsideBlight(player.x, player.y);
     const buffKey = `${player.isShielded}|${player.valhallaActive}|${player.stance}|${inBlight}`;
+    const distFloor = Math.floor(distToEdge);
+    const blightKey = `${inBlight}|${distFloor}|${distFloor < 300}`;
 
     if (!force &&
         hudCache.level === player.level &&
@@ -83,56 +88,82 @@ export function updateHud(player, gameState, cooldowns, aliveCreeps, activeCamps
         hudCache.qCd === qR && hudCache.wCd === wR && hudCache.eCd === eR &&
         hudCache.aaCd === aaR &&
         hudCache.heroClass === player.heroClass &&
+        hudCache.heroTitle === (player.heroTitle || '') &&
         hudCache.buffKey === buffKey &&
-        Math.floor(distToEdge) === Math.floor(hudCache.blightDist)) {
+        hudCache.blightKey === blightKey) {
         return;
     }
 
     const cfg = ABILITY_CONFIG[player.heroClass] ?? ABILITY_CONFIG.Mage;
     const hpRatio = player.maxHp > 0 ? player.hp / player.maxHp : 0;
     const xpRatio = xpPerLevel > 0 ? gameState.xp / xpPerLevel : 0;
+    const lowHp = hpRatio > 0 && hpRatio < 0.25;
 
-    _set('player-level', player.level);
-    _set('hud-level-badge', player.level);
-    _set('player-gold', gameState.gold);
-    _set('hud-gold-value', gameState.gold);
-    _set('xp-text', `${gameState.xp}/${xpPerLevel}`);
-    _style('health-bar', 'width', `${hpRatio * 100}%`);
-    _style('xp-bar', 'width', `${xpRatio * 100}%`);
-    _set('health-bar-text', `${Math.ceil(player.hp)} / ${player.maxHp}`);
-    _set('xp-bar-text', `${gameState.xp} / ${xpPerLevel}`);
-    _set('creeps-count', activeCamps);
-    _set('alive-counter', aliveCreeps);
+    const statsDirty = force ||
+        hudCache.level !== player.level ||
+        hudCache.gold !== gameState.gold ||
+        hudCache.xp !== gameState.xp ||
+        hudCache.hp !== player.hp ||
+        hudCache.maxHp !== player.maxHp ||
+        hudCache.aliveCreeps !== aliveCreeps ||
+        hudCache.activeCamps !== activeCamps ||
+        hudCache.heroClass !== player.heroClass ||
+        hudCache.heroTitle !== (player.heroTitle || '') ||
+        hudCache.lowHp !== lowHp;
 
-    const portraitLetter = document.getElementById('hud-portrait-letter');
-    const portraitEl = document.getElementById('hud-portrait');
-    if (portraitLetter) {
-        portraitLetter.textContent = PORTRAIT_LETTERS[player.heroClass] ?? '?';
+    if (statsDirty) {
+        _setText('player-level', player.level);
+        _setText('hud-level-badge', player.level);
+        _setText('player-gold', gameState.gold);
+        _setText('hud-gold-value', gameState.gold);
+        _setText('xp-text', `${gameState.xp}/${xpPerLevel}`);
+        _setStyle('health-bar', 'width', `${hpRatio * 100}%`);
+        _setStyle('xp-bar', 'width', `${xpRatio * 100}%`);
+        _setText('health-bar-text', `${Math.ceil(player.hp)} / ${player.maxHp}`);
+        _setText('xp-bar-text', `${gameState.xp} / ${xpPerLevel}`);
+        _setText('creeps-count', activeCamps);
+        _setText('alive-counter', aliveCreeps);
+
+        const portraitLetter = $('hud-portrait-letter');
+        if (portraitLetter) portraitLetter.textContent = PORTRAIT_LETTERS[player.heroClass] ?? '?';
+
+        const portraitEl = $('hud-portrait');
+        if (portraitEl) portraitEl.setAttribute('aria-label', player.heroTitle || player.heroClass);
+
+        _setText('hud-hero-name', player.heroTitle || player.heroRole || player.heroClass);
+
+        const hpWrap = $('health-bar-container');
+        if (hpWrap) hpWrap.classList.toggle('low-hp', lowHp);
     }
-    if (portraitEl) {
-        portraitEl.setAttribute('aria-label', player.heroTitle || player.heroClass);
+
+    const cdsDirty = force ||
+        hudCache.qCd !== qR || hudCache.wCd !== wR ||
+        hudCache.eCd !== eR || hudCache.aaCd !== aaR ||
+        hudCache.heroClass !== player.heroClass;
+
+    if (cdsDirty) {
+        updateAbilitySlot('q', cooldowns.q, cfg.q_cd, player.skills?.skill1 ?? 'Q', '1');
+        updateAbilitySlot('w', cooldowns.w, cfg.w_cd, player.skills?.skill2 ?? 'W', '2');
+        updateAbilitySlot('e', cooldowns.e, cfg.e_cd, player.skills?.ult ?? 'E', '3', true);
+
+        const aaMax = getAttackCooldownMax(player, cfg);
+        updateAbilitySlot('aa', player.attackTimer ?? 0, aaMax, 'Attack', 'LMB', false, true);
     }
-    _set('hud-hero-name', player.heroTitle || player.heroRole || player.heroClass);
 
-    const hpWrap = document.getElementById('health-bar-container');
-    if (hpWrap) hpWrap.classList.toggle('low-hp', hpRatio > 0 && hpRatio < 0.25);
+    if (force || hudCache.buffKey !== buffKey) {
+        updateBuffs(player, inBlight);
+    }
 
-    updateAbilitySlot('q', cooldowns.q, cfg.q_cd, player.skills?.skill1 ?? 'Q', '1');
-    updateAbilitySlot('w', cooldowns.w, cfg.w_cd, player.skills?.skill2 ?? 'W', '2');
-    updateAbilitySlot('e', cooldowns.e, cfg.e_cd, player.skills?.ult ?? 'E', '3', true);
-
-    const aaMax = getAttackCooldownMax(player, cfg);
-    updateAbilitySlot('aa', player.attackTimer ?? 0, aaMax, 'Attack', 'LMB', false, true);
-
-    updateBuffs(player, inBlight);
-    updateBlightPanel(blight, distToEdge, inBlight);
+    if (force || hudCache.blightKey !== blightKey) {
+        updateBlightPanel(blight, distToEdge, inBlight);
+    }
 
     Object.assign(hudCache, {
         level: player.level, gold: gameState.gold, xp: gameState.xp,
         hp: player.hp, maxHp: player.maxHp,
         aliveCreeps, activeCamps, qCd: qR, wCd: wR, eCd: eR, aaCd: aaR,
-        heroClass: player.heroClass, heroTitle: player.heroTitle,
-        buffKey, blightDist: distToEdge, inBlight,
+        heroClass: player.heroClass, heroTitle: player.heroTitle || '',
+        buffKey, blightKey, lowHp,
     });
 }
 
@@ -145,7 +176,7 @@ function getAttackCooldownMax(player, cfg) {
 }
 
 function updateAbilitySlot(slotId, remaining, maxCd, name, key, isUlt = false, isBasic = false) {
-    const el = document.querySelector(`.ability-slot[data-slot="${slotId}"]`);
+    const el = slotEl(slotId);
     if (!el) return;
 
     const progress = maxCd > 0 ? Math.min(1, remaining / maxCd) : 0;
@@ -178,7 +209,7 @@ function updateAbilitySlot(slotId, remaining, maxCd, name, key, isUlt = false, i
 }
 
 function updateBuffs(player, inBlight) {
-    const container = document.getElementById('hud-buffs');
+    const container = $('hud-buffs');
     if (!container) return;
 
     const buffs = [];
@@ -189,38 +220,54 @@ function updateBuffs(player, inBlight) {
     }
     if (inBlight) buffs.push({ id: 'blight', label: 'Blight damage', debuff: true });
 
-    container.innerHTML = buffs.map(b => `
-        <div class="buff-icon${b.debuff ? ' debuff' : ''}" role="img" aria-label="${b.label}">
-            ${BUFF_SVGS[b.id] ?? ''}
-        </div>
-    `).join('');
+    container.replaceChildren(...buffs.map(b => {
+        const node = document.createElement('div');
+        node.className = `buff-icon${b.debuff ? ' debuff' : ''}`;
+        node.setAttribute('role', 'img');
+        node.setAttribute('aria-label', b.label);
+        node.innerHTML = BUFF_SVGS[b.id] ?? '';
+        return node;
+    }));
 }
 
 function updateBlightPanel(blight, distToEdge, inBlight) {
-    const el = document.getElementById('hud-blight');
+    const el = $('hud-blight');
     if (!el || !blight) return;
 
     el.classList.remove('warning', 'danger');
 
     if (inBlight) {
         el.classList.add('danger');
-        el.innerHTML = '<div class="blight-status">IN THE BLIGHT</div>';
+        let status = el.querySelector('.blight-status');
+        if (!status || el.querySelector('.blight-safe') || el.querySelector('.blight-distance')) {
+            el.replaceChildren();
+            status = document.createElement('div');
+            status.className = 'blight-status';
+            el.appendChild(status);
+        }
+        status.textContent = 'IN THE BLIGHT';
         return;
     }
 
     const dist = Math.max(0, Math.floor(distToEdge));
     const eta = blight.shrinkSpeed > 0 ? (dist / blight.shrinkSpeed).toFixed(0) : '—';
-
     if (dist < 300) el.classList.add('warning');
 
-    el.innerHTML = `
-        <div class="blight-safe">Safe zone edge</div>
-        <div class="blight-distance">${dist}m · ~${eta}s</div>
-    `;
+    let safe = el.querySelector('.blight-safe');
+    let distance = el.querySelector('.blight-distance');
+    if (!safe || !distance) {
+        safe = document.createElement('div');
+        safe.className = 'blight-safe';
+        distance = document.createElement('div');
+        distance.className = 'blight-distance';
+        el.replaceChildren(safe, distance);
+    }
+    safe.textContent = 'Safe zone edge';
+    distance.textContent = `${dist}m · ~${eta}s`;
 }
 
 export function showLevelUpFlash() {
-    const el = document.getElementById('level-up-flash');
+    const el = $('level-up-flash');
     if (!el) return;
     el.classList.remove('active');
     void el.offsetWidth;
@@ -228,12 +275,12 @@ export function showLevelUpFlash() {
     setTimeout(() => el.classList.remove('active'), 2000);
 }
 
-function _set(id, val) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
+function _setText(id, val) {
+    const el = $(id);
+    if (el && el.textContent !== String(val)) el.textContent = val;
 }
 
-function _style(id, prop, val) {
-    const el = document.getElementById(id);
-    if (el) el.style[prop] = val;
+function _setStyle(id, prop, val) {
+    const el = $(id);
+    if (el && el.style[prop] !== val) el.style[prop] = val;
 }

@@ -14,7 +14,10 @@ import { resetAbilityState }       from './ability-engine.js';
 import { playerLootState }         from './economy-engine.js';
 import { calculateItemCost }       from './economy-engine.js';
 import { initForestEnvironment }   from './canvas-renderer.js';
-import { updateShopUI, checkMapPresenceUI } from '../ui/shop-interface.js';
+import { updateShopUI } from '../ui/shop-interface.js';
+import { checkMapPresenceUI } from '../ui/map-presence.js';
+import { closeInGameSettings } from '../ui/menu-interface.js';
+import { closeShopUI } from '../ui/shop-interface.js';
 import { markHudDirty, updateHud } from '../ui/hud.js';
 import { resetInventory, inventorySlotsArray } from './inventory.js';
 import {
@@ -28,7 +31,7 @@ import { setSpriteRendering } from './rendering/render-config.js';
 import { spawnBots, resetBots } from './bot-manager.js';
 import { resetVision } from './vision-grid.js';
 import { clearDamageEvents } from './damage-events.js';
-import { resizeDamageOverlay } from '../ui/damage-numbers.js';
+import { resizeDamageOverlay, clearDamageNumbers } from '../ui/damage-numbers.js';
 
 let _player      = null;
 let _playerClass = 'Ranger';
@@ -163,6 +166,7 @@ export function initializeGame() {
     resetBots();
     resetVision();
     clearDamageEvents();
+    clearDamageNumbers();
     resetInventory(markHudDirty);
 
     initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 300);
@@ -188,6 +192,8 @@ export function initializeGame() {
 }
 
 export function showGameOver() {
+    closeShopUI();
+    closeInGameSettings();
     document.getElementById('game-over-screen')?.classList.add('visible');
     gameState.running = false;
 }
@@ -195,6 +201,8 @@ export function showGameOver() {
 export function resetGame(showMenuFn) {
     gameState.running         = false;
     gameState.selectedHeroKey = null;
+    closeShopUI();
+    closeInGameSettings();
     document.getElementById('game-over-screen')?.classList.remove('visible');
     if (showMenuFn) showMenuFn({ skipWelcome: true });
 }

@@ -3,13 +3,14 @@
 // Damage-event queue för floating numbers och hit-effects.
 // ============================================================
 
+import { isDamageNumbersEnabled } from '../ui/game-settings.js';
 import { spawnDamageNumber, tickDamageNumbers as tickFloatingNumbers } from '../ui/damage-numbers.js';
 
 const _queue = [];
 const MAX_AGE = 1.5;
 
 export function pushDamageEvent(x, y, amount, type = 'physical') {
-    if (amount <= 0) return;
+    if (amount <= 0 || !isDamageNumbersEnabled()) return;
     _queue.push({ x, y, amount, type, age: 0 });
     spawnDamageNumber(x, y, amount, type);
 }

@@ -20,7 +20,8 @@
 //   FIX: Rendering-pipeline verifierad (world/screen-space separation korrekt)
 // ============================================================
 
-import { camera, updateCamera, isObjectVisible } from './camera.js';
+import { camera, updateCamera, isObjectVisible, updateScreenShake, getCameraOffset } from './camera.js';
+import { pointerScreen, pointerActive } from './input.js';
 import AbilityEngine, {
     CooldownState, ActiveAbilityEffects, GlobalParticles,
 } from './ability-engine.js';
@@ -214,6 +215,7 @@ export function updateGameLogic(deltaTime) {
 
     revealVision(_player.x, _player.y, VISION_RADIUS);
     updateDamageNumbers(deltaTime / 1000);
+    updateScreenShake(deltaTime / 1000);
 
     // Blight-skada
     if (isOutsideBlight(_player.x, _player.y)) {
@@ -267,7 +269,8 @@ export function renderGame(deltaTime, time = 0) {
     _ctx.globalAlpha = 1.0;
 
     // ── [B] WORLD-SPACE (camera translate aktiv) ─────────────
-    _ctx.translate(-camera.x, -camera.y);
+    const shake = getCameraOffset();
+    _ctx.translate(-(camera.x + shake.x), -(camera.y + shake.y));
 
     drawForestBackground(_ctx, camera, _viewportWidth, _viewportHeight);
     drawTerrainBiomes(_ctx, camera, _viewportWidth, _viewportHeight, deltaTime / 1000);
@@ -335,6 +338,8 @@ export function renderGame(deltaTime, time = 0) {
 
     for (const p of Projectiles) {
         if (p.isDead) continue;
+        if (typeof p.isAlive === 'function' && !p.isAlive()) continue;
+        if (p.ttl !== undefined && p.ttl <= 0) continue;
         if (!isObjectVisible(p, _viewportWidth, _viewportHeight)) continue;
         if (p.type === 'firebolt' || p.type === 'arrow') {
             drawDecoratedProjectile(_ctx, p);          // FIX: importerades inte i gamla versionen
@@ -357,10 +362,9 @@ export function renderGame(deltaTime, time = 0) {
     drawFogOfWar(_ctx, _player.x, _player.y, camera, _viewportWidth, _viewportHeight);
 
     // Crosshair (screen-space)
-    const input = _keysRef?.input;
-    if (input?.mouseScreenX !== undefined) {
+    if (pointerActive) {
         _ctx.save();
-        _ctx.translate(input.mouseScreenX, input.mouseScreenY);
+        _ctx.translate(pointerScreen.x, pointerScreen.y);
         _ctx.shadowColor              = '#00ffff';
         _ctx.shadowBlur               = 15 + Math.sin(time * 0.005) * 3;
         _ctx.globalCompositeOperation = 'lighter';

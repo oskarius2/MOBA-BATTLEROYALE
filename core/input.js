@@ -4,7 +4,9 @@
 // ============================================================
 
 export const keysPressed = {};
-export const pointerWorld = { x: 0, y: 0 };
+export const pointerWorld  = { x: 0, y: 0 };
+export const pointerScreen = { x: 0, y: 0 };
+export let pointerActive = false;
 
 /**
  * @param {HTMLCanvasElement} canvas
@@ -14,6 +16,7 @@ export const pointerWorld = { x: 0, y: 0 };
  * @param {Function} onShopToggle     — () => void
  * @param {Function} isShopOpen       — () => bool
  * @param {Function} getWorldCoords   — (event, canvas) => {x,y}
+ * @param {Function} [onEscape]     — () => void
  */
 export function initInput(canvas, {
     getCamera,
@@ -22,8 +25,16 @@ export function initInput(canvas, {
     onShopToggle,
     isShopOpen,
     getWorldCoords,
+    onEscape,
 }) {
     canvas.addEventListener('mousemove', (event) => {
+        const rect   = canvas.getBoundingClientRect();
+        const scaleX = canvas.width  / rect.width;
+        const scaleY = canvas.height / rect.height;
+        pointerActive   = true;
+        pointerScreen.x = (event.clientX - rect.left) * scaleX;
+        pointerScreen.y = (event.clientY - rect.top)  * scaleY;
+
         const coords = getWorldCoords(event, canvas);
         pointerWorld.x = coords.x;
         pointerWorld.y = coords.y;
@@ -40,6 +51,7 @@ export function initInput(canvas, {
         const key = e.key.toLowerCase();
         keysPressed[key] = true;
 
+        if (key === 'escape') { onEscape?.(); return; }
         if (key === 'b') { onShopToggle(); return; }
 
         if (ABILITY_MAP[key] && !isShopOpen()) {
