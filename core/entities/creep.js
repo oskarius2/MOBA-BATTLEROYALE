@@ -64,8 +64,12 @@ export class Creep {
 
     enterAggro() { this.state = 'AGGRO'; }
 
-    update(player) {
+    update(player, deltaTime) {
         if (this.isDead) return;
+        
+        // Ensure we default deltaTime safely if it's missing (fallback: 16ms @ 60 FPS)
+        const dt = deltaTime !== undefined ? deltaTime : 0.016;
+        
         this.prevX = this.x;
         this.prevY = this.y;
 
@@ -78,8 +82,9 @@ export class Creep {
             const dy   = player.y - this.y;
             const dist = Math.hypot(dx, dy);
             if (dist > 1) {
-                this.x += (dx / dist) * this.speed;
-                this.y += (dy / dist) * this.speed;
+                // Scaled via frame-driven deltaTime (dt * 60 maintains 60 FPS baseline)
+                this.x += (dx / dist) * this.speed * dt * 60;
+                this.y += (dy / dist) * this.speed * dt * 60;
             }
         } else {
             const dx   = this.patrolTarget.x - this.x;
@@ -88,16 +93,18 @@ export class Creep {
             if (dist < 8) {
                 this.patrolTarget = this.pickPatrolPoint();
             } else {
-                this.x += (dx / dist) * this.speed * 0.6;
-                this.y += (dy / dist) * this.speed * 0.6;
+                this.x += (dx / dist) * this.speed * 0.6 * dt * 60;
+                this.y += (dy / dist) * this.speed * 0.6 * dt * 60;
             }
             const distFromSpawn = Math.hypot(this.x - this.spawnX, this.y - this.spawnY);
             if (distFromSpawn > PATROL_RADIUS) {
                 const bx = this.spawnX - this.x;
                 const by = this.spawnY - this.y;
                 const bd = Math.hypot(bx, by);
-                this.x += (bx / bd) * this.speed * 0.8;
-                this.y += (by / bd) * this.speed * 0.8;
+                if (bd > 0) {
+                    this.x += (bx / bd) * this.speed * 0.8 * dt * 60;
+                    this.y += (by / bd) * this.speed * 0.8 * dt * 60;
+                }
             }
         }
 

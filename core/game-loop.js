@@ -136,10 +136,10 @@ export function updateGameLogic(deltaTime) {
         }
     }
 
-    // Creep-uppdatering
+    // Creep-uppdatering (pass deltaTime in seconds for frame-independent movement)
     for (let i = Creeps.length - 1; i >= 0; i--) {
         const creep = Creeps[i];
-        creep.update(_player);
+        creep.update(_player, deltaTime / 1000);
 
         // Projektil-kollision
         for (let j = Projectiles.length - 1; j >= 0; j--) {
