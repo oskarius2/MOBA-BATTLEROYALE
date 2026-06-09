@@ -1,73 +1,46 @@
 {
-  "useSprites": false,
-  "_comment": "Keep false until top-down PNG art ships (see ASSETS-SPEC.md). Set true after bake + validation, then hard reload.",
-  "_spec": {
-    "heroes": {
+  "globalStyles": {
+    "defaultSpriteSize": 128,
+    "heroDefaults": {
       "frameSize": 128,
-      "framesPerAction": 6,
-      "actionRows": 4,
-      "minWidth": 768,
-      "minHeight": 512,
-      "rowLayout": ["idle", "walk", "attack", "transition"]
+      "framesPerAction": 6
     },
-    "hybrid": {
-      "minHeight": 1024,
-      "extraRows": 4,
-      "stances": ["MELEE", "RANGED"],
-      "note": "RANGED uses rows 4-7 (idle/walk/attack/transition)"
-    },
-    "creeps": {
+    "creeperDefaults": {
       "frameSize": 96,
-      "framesPerAction": 4,
-      "actionRows": 4,
-      "minWidth": 384,
-      "minHeight": 384,
-      "rowLayout": ["idle", "walk", "attack", "transition"]
+      "framesPerAction": 4
     }
   },
+  "useSprites": true,
+  "_comment": "Animated spritesheets baked from concept art. Rows: 0=idle, 1=walk, 2=attack, 3=transition.",
   "heroes": {
+    "defaults_ref": "heroDefaults",
     "Warrior": {
-      "sheet": "heroes/warrior.png",
-      "frameSize": 128,
-      "framesPerAction": 6
+      "sheet": "heroes/warrior.png"
     },
     "Mage": {
-      "sheet": "heroes/mage.png",
-      "frameSize": 128,
-      "framesPerAction": 6
+      "sheet": "heroes/mage.png"
     },
     "Ranger": {
-      "sheet": "heroes/ranger.png",
-      "frameSize": 128,
-      "framesPerAction": 6
+      "sheet": "heroes/ranger.png"
     },
     "Tank-Viking": {
-      "sheet": "heroes/viking.png",
-      "frameSize": 128,
-      "framesPerAction": 6
+      "sheet": "heroes/viking.png"
     },
     "Hybrid": {
       "sheet": "heroes/hybrid.png",
-      "frameSize": 128,
-      "framesPerAction": 6,
       "stances": ["MELEE", "RANGED"]
     }
   },
   "creeps": {
+    "defaults_ref": "creeperDefaults",
     "scout": {
-      "sheet": "creeps/scout.png",
-      "frameSize": 96,
-      "framesPerAction": 4
+      "sheet": "creeps/scout.png"
     },
     "warrior": {
-      "sheet": "creeps/warrior.png",
-      "frameSize": 96,
-      "framesPerAction": 4
+      "sheet": "creeps/warrior.png"
     },
     "ancient": {
-      "sheet": "creeps/ancient.png",
-      "frameSize": 96,
-      "framesPerAction": 4
+      "sheet": "creeps/ancient.png"
     }
   }
 }

@@ -12,7 +12,7 @@ import {
 } from '../../data/world-config.js';
 
 const MAP_MIN = 32;
-const MAP_MAX = 5968;
+const MAP_MAX = 9968;
 
 const FSM_STATES = {
     CIRCLE_ESCAPE: 'CIRCLE_ESCAPE',

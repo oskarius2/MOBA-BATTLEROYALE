@@ -50,7 +50,7 @@ export function getPlayerClass() { return _playerClass; }
 
 /** Static jungle backdrop for menu glassmorphism (before game loop runs). */
 export function paintMenuBackdrop(ctx, viewportW, viewportH) {
-    initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 420);
+    initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 700);
     updateCamera(
         { x: CANVAS_WIDTH * 0.42, y: CANVAS_HEIGHT * 0.38 },
         viewportW,
@@ -193,9 +193,9 @@ export function initializeGame() {
     clearDamageNumbers();
     resetInventory(markHudDirty);
 
-    initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 420);
+    initForestEnvironment(CANVAS_WIDTH, CANVAS_HEIGHT, 700);
     setupCreeps();
-    spawnBots(5);
+    spawnBots(8);
     initEntityVisuals();
     resizeDamageOverlay();
     markHudDirty();

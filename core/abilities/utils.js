@@ -6,7 +6,7 @@
 import { ABILITY_CONFIG } from '../balance-config.js';
 
 export const MAP_MIN = 32;
-export const MAP_MAX = 5968;
+export const MAP_MAX = 9968;
 
 export function normalizePointer(pointerWorld) {
     if (!pointerWorld) return { worldX: 0, worldY: 0 };

@@ -47,7 +47,7 @@ export const HERO_BASE_STATS = {
     Warrior: {
         maxHp:            130,    // HP
         projectileDamage:  26,    // skada/grundattack
-        speed:            3.6,    // px/tick (game-units)
+        speed:            2.9,    // px/tick (game-units)
         radius:            26,    // px, kollisionsradie
         mass:               2,    // separation weight (heavier = knuffas mindre)
         baseArmor:          3,    // se damageReduction() nedan
@@ -55,7 +55,7 @@ export const HERO_BASE_STATS = {
     'Tank-Viking': {
         maxHp:            160,    // HP  (var 180, proportionsfel)
         projectileDamage:  50,    // skada/grundattack  (var 14 — massivt fel)
-        speed:            3.0,    // px/tick
+        speed:            2.4,    // px/tick
         radius:            28,    // px
         mass:               3,
         baseArmor:          5,    // högsta armor i roster
@@ -64,7 +64,7 @@ export const HERO_BASE_STATS = {
     Mage: {
         maxHp:             95,    // HP  (var 90, liten justering)
         projectileDamage:  19,    // skada/grundattack  (var 24 — för hög DPS)
-        speed:            3.8,    // px/tick
+        speed:            3.0,    // px/tick
         radius:            23,    // px
         mass:               1,
         baseArmor:          2,    // lägsta armor (glass cannon)
@@ -72,7 +72,7 @@ export const HERO_BASE_STATS = {
     Ranger: {
         maxHp:            100,    // HP  (oförändrad)
         projectileDamage:  16,    // skada/grundattack  (var 18)
-        speed:            4.2,    // px/tick  (snabbast bland ranged)
+        speed:            3.4,    // px/tick  (snabbast bland ranged)
         radius:            24,    // px
         mass:               1,
         baseArmor:          2,
@@ -80,7 +80,7 @@ export const HERO_BASE_STATS = {
     Hybrid: {
         maxHp:            110,    // HP  (oförändrad)
         projectileDamage:  35,    // skada/grundattack  (var 20 — för låg DPS)
-        speed:            4.0,    // px/tick
+        speed:            3.2,    // px/tick
         radius:            25,    // px
         mass:               2,
         baseArmor:          2,

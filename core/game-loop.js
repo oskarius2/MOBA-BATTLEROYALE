@@ -206,7 +206,7 @@ export function updateGameLogic(deltaTime) {
             proj.x   += proj.vx;
             proj.y   += proj.vy;
             proj.ttl -= 1;
-            if (proj.ttl <= 0 || proj.x < -50 || proj.x > 6050 || proj.y < -50 || proj.y > 6050) {
+            if (proj.ttl <= 0 || proj.x < -50 || proj.x > 10050 || proj.y < -50 || proj.y > 10050) {
                 Projectiles.splice(i, 1);
             }
         } else {

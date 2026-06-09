@@ -7,13 +7,18 @@ import { Bot } from './entities/bot.js';
 
 export let Bots = [];
 
+// Spawn-positioner skalade för 10 000×10 000 karta
 const DEFAULT_SPAWNS = [
-    { x: 1000, y: 1000, heroClass: 'Warrior',     seed: 101 },
-    { x: 5000, y: 1000, heroClass: 'Mage',        seed: 102 },
-    { x: 1000, y: 5000, heroClass: 'Ranger',      seed: 103 },
-    { x: 5000, y: 5000, heroClass: 'Tank-Viking', seed: 104 },
-    { x: 3000, y: 1200, heroClass: 'Hybrid',      seed: 105 },
-    { x: 2800, y: 4800, heroClass: 'Warrior',     seed: 106 },
+    { x: 1500,  y: 1500,  heroClass: 'Warrior',     seed: 101 },
+    { x: 8500,  y: 1500,  heroClass: 'Mage',        seed: 102 },
+    { x: 1500,  y: 8500,  heroClass: 'Ranger',      seed: 103 },
+    { x: 8500,  y: 8500,  heroClass: 'Tank-Viking', seed: 104 },
+    { x: 5000,  y: 1500,  heroClass: 'Hybrid',      seed: 105 },
+    { x: 1500,  y: 5000,  heroClass: 'Warrior',     seed: 106 },
+    { x: 8500,  y: 5000,  heroClass: 'Mage',        seed: 107 },
+    { x: 5000,  y: 8500,  heroClass: 'Ranger',      seed: 108 },
+    { x: 2500,  y: 2500,  heroClass: 'Hybrid',      seed: 109 },
+    { x: 7500,  y: 7500,  heroClass: 'Tank-Viking', seed: 110 },
 ];
 
 export function resetBots() {
@@ -21,9 +26,9 @@ export function resetBots() {
 }
 
 /**
- * @param {number} [count=5] — antal bots att spawna
+ * @param {number} [count=8] — antal bots att spawna
  */
-export function spawnBots(count = 5) {
+export function spawnBots(count = 8) {
     Bots = [];
     const slots = DEFAULT_SPAWNS.slice(0, Math.max(0, count));
     for (const pos of slots) {

@@ -22,6 +22,54 @@ const CREEP_COLORS = {
 
 let _instance = null;
 
+const MANIFEST_META_KEYS = new Set(['defaults_ref']);
+
+/**
+ * Resolves heroes/creeps entries from manifest v2 (globalStyles + defaults_ref)
+ * or legacy flat entries (frameSize on each row). Safe to call in Node for tests.
+ * @param {object} manifest
+ * @returns {{ heroes: Record<string, object>, creeps: Record<string, object> }}
+ */
+export function resolveManifestEntries(manifest) {
+    const global = manifest?.globalStyles ?? {};
+
+    function sectionDefaults(sectionName) {
+        const section = manifest?.[sectionName] ?? {};
+        const refKey = section.defaults_ref;
+        const fromRef = refKey && global[refKey] ? { ...global[refKey] } : {};
+
+        if (sectionName === 'heroes') {
+            return {
+                frameSize: global.defaultSpriteSize ?? 128,
+                framesPerAction: 6,
+                ...fromRef,
+            };
+        }
+
+        return {
+            frameSize: global.creeperDefaults?.frameSize ?? 96,
+            framesPerAction: 4,
+            ...fromRef,
+        };
+    }
+
+    function collect(sectionName) {
+        const defaults = sectionDefaults(sectionName);
+        const out = {};
+        for (const [key, cfg] of Object.entries(manifest?.[sectionName] ?? {})) {
+            if (MANIFEST_META_KEYS.has(key) || key.startsWith('_')) continue;
+            if (!cfg || typeof cfg !== 'object' || !cfg.sheet) continue;
+            out[key] = { ...defaults, ...cfg };
+        }
+        return out;
+    }
+
+    return {
+        heroes: collect('heroes'),
+        creeps: collect('creeps'),
+    };
+}
+
 function _expectedMinSize(category, key, cfg) {
     const f = cfg.frameSize;
     const cols = cfg.framesPerAction;
@@ -98,12 +146,13 @@ export class SpriteSheetManager {
         if (this._loadPromise) return this._loadPromise;
 
         this.manifest = manifest;
+        const { heroes, creeps } = resolveManifestEntries(manifest);
         const entries = [];
 
-        for (const [heroClass, cfg] of Object.entries(manifest.heroes ?? {})) {
+        for (const [heroClass, cfg] of Object.entries(heroes)) {
             entries.push(this._loadEntry('hero', heroClass, cfg));
         }
-        for (const [typeKey, cfg] of Object.entries(manifest.creeps ?? {})) {
+        for (const [typeKey, cfg] of Object.entries(creeps)) {
             entries.push(this._loadEntry('creep', typeKey, cfg));
         }
 
